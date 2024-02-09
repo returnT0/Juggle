@@ -1,0 +1,27 @@
+<section *ngIf="user" class="flex flex-col justify-center space-y-28 items-center text-light-1 pt-36 tracking-wider">
+  <div class="flex gap-x-3">
+    <h1 class="text-heading1-normal uppercase cursor-pointer"
+        (click)="copyEmailToClipboard(user.email)">
+      {{user.email}}
+    </h1>
+  </div>
+  <div class="flex">
+    <button (click)="recoverPassword()" class="text-heading1-normal">PASSWORD</button>
+  </div>
+</section>
+<div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
+  <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default" role="alert">
+    <div class="ms-3 text-sm font-normal whitespace-nowrap">{{ message }}</div>
+    <div *ngIf="showOptions" class="flex gap-x-2">
+      <button (click)="handleYes()" class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">YES</button>
+      <button (click)="handleNo()" class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">NO</button>
+    </div>
+    <button (click)="cancel()" class="ms-auto -mx-1.5 -my-1.5 bg-none text-dark-5 focus:ring-0 p-1.5 hover:text-red-600 inline-flex items-center justify-center h-8 w-8" data-dismiss-target="#toast-default" aria-label="Close">
+      <span class="sr-only">Close</span>
+      <svg class="!w-4 !h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
+

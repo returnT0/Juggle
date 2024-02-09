@@ -1,0 +1,37 @@
+<nav class='topbar items-baseline'>
+  <a [routerLink]="['/landing']" class='flex items-center gap-3'>
+    <p class='nav_link nav_link_logo'>JUGGLE</p>
+  </a>
+
+  <div class="flex flex-row gap-x-20" *ngIf="!isAuthenticated">
+    <a [routerLink]="['/']">
+      <p class='nav_link nav_link_heading'>SERVICES</p>
+    </a>
+    <a [routerLink]="['/']">
+      <p class='nav_link nav_link_heading'>WORK</p>
+    </a>
+    <a [routerLink]="['/']">
+      <p class='nav_link nav_link_heading'>ABOUT</p>
+    </a>
+  </div>
+  <div class='flex' *ngIf="!isAuthenticated">
+    <a [routerLink]="['/sign-in']">
+      <p class='nav_link nav_link_heading'>SIGN IN</p>
+    </a>
+  </div>
+  <div class='flex' *ngIf="isAuthenticated && isProfilePage">
+    <a [routerLink]="['/dashboard']" class='nav_link nav_link_heading'>
+      DASHBOARD
+    </a>
+  </div>
+  <div class='flex' *ngIf="isAuthenticated && isDashboardPage">
+    <a [routerLink]="['/profile']" class='nav_link nav_link_heading'>
+      USER
+    </a>
+  </div>
+  <div class='flex' *ngIf="isAuthenticated">
+    <button (click)="signOut()" class='nav_link nav_link_heading'>
+      SIGN OUT
+    </button>
+  </div>
+</nav>

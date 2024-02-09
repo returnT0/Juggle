@@ -3,14 +3,40 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import {PdfViewerModule} from "ng2-pdf-viewer";
+import {AngularFireModule} from "@angular/fire/compat";
+import {environment} from "../environments/environment";
+import {AngularFireAuthModule} from "@angular/fire/compat/auth";
+import {ReactiveFormsModule} from "@angular/forms";
+import { NavComponent } from './nav/nav.component';
+import { LandingComponent } from './landing/landing.component';
+import { FooterComponent } from './footer/footer.component';
+import { SignUpComponent } from './auth/sign-up/sign-up.component';
+import { SignInComponent } from './auth/sign-in/sign-in.component';
+import { ProfileComponent } from './profile/profile.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
+import { NotFoundComponent } from './not-found/not-found.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    NavComponent,
+    LandingComponent,
+    FooterComponent,
+    SignUpComponent,
+    SignInComponent,
+    ProfileComponent,
+    DashboardComponent,
+    NotFoundComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+
+    AngularFireModule.initializeApp(environment.firebase),
+    AngularFireAuthModule,
+    ReactiveFormsModule,
+    PdfViewerModule
   ],
   providers: [],
   bootstrap: [AppComponent]

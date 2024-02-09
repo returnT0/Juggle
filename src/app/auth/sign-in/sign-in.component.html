@@ -1,0 +1,54 @@
+<section class="pt-16 overflow-hidden flex flex-col p-6 space-y-12 w-[46vw] justify-center tracking-wide">
+  <h2 class="flex text-heading1-normal text-center text-light-1 self-center font-jetbrains">
+    SIGN IN TO JUGGLE
+  </h2>
+  <form class="space-y-6 font-gabarito" [formGroup]="form" autocomplete="off">
+    <div>
+      <label for="username" class="text-stone-200">EMAIL</label>
+      <input type="email" id="username" name="username"
+             class="form_input" placeholder="EMAIL@EMAIL.COM"
+             required formControlName="email"
+      >
+    </div>
+    <div>
+      <div class="flex flex-row justify-between">
+        <label class="flex text-stone-200">PASSWORD</label>
+        <button (click)="recoverPassword()"
+                class="flex text-secondary transition-colors ease-in-out hover:text-light-1"
+        >
+          RECOVER PASSWORD
+        </button>
+      </div>
+      <input id="password" name="password"
+             class="form_input mb-3" placeholder="••••••••"
+             required type="password" formControlName="password"
+      >
+    </div>
+    <button
+      class="w-full bg-light-1 text-dark-1 transition-colors ease-in-out
+             hover:bg-light-2 text-heading3-normal
+             rounded-sm shadow-md py-3 active:bg-light-3-800"
+      (click)="signIn()"
+    >
+      SIGN IN
+    </button>
+    <div class="text-body-medium font-cormorant-garamond font-bold text-light-2/60">
+      NOT REGISTERED?
+      <a [routerLink]="['/sign-up']"
+         class="text-head text-light-2 hover:text-light-1 hover:underline">
+        JOIN</a>
+    </div>
+  </form>
+</section>
+<div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
+  <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default"
+       role="alert">
+    <div class="ms-3 text-sm font-normal whitespace-nowrap">{{ message }}</div>
+    <button (click)="cancel()" class="ms-auto -mx-1.5 -my-1.5 bg-none text-dark-5 focus:ring-0 p-1.5 hover:text-red-600 inline-flex items-center justify-center h-8 w-8" data-dismiss-target="#toast-default" aria-label="Close">
+      <span class="sr-only">Close</span>
+      <svg class="!w-4 !h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
