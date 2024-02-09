@@ -1,4 +1,6 @@
 import {Component, OnInit} from '@angular/core';
+import {UploadService} from "../shared/upload.service";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-dashboard',
@@ -9,85 +11,30 @@ export class DashboardComponent implements OnInit {
   message: string = '';
   showMessage: boolean = false;
   showOptions!: boolean;
+  pdfUrls: string[] = [];
+  private sub!: Subscription;
 
-  gridItems: GridItem[] = [
-    {
-      id: 1,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 2,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 3,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 4,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 5,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 6,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-    {
-      id: 7,
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.',
-      link: '#'
-    },
-  ];
-
-  constructor() {
-  }
+  constructor(private uploadService: UploadService) {}
 
   ngOnInit(): void {
+    this.sub = this.uploadService.fetchAllPDFs().subscribe(urls => {
+      this.pdfUrls = urls;
+    }, error => console.error(error));
   }
 
-  deleteItem(itemId: number): void {
-    const item = this.gridItems.find(item => item.id === itemId);
-    if (item) {
-      this.displayMessage({
-        message: `DO YOU WANT TO DELETE '${item.title}' FROM THE LIST?`,
-        duration: 60000,
-        showOptions: true,
-        onYes: () => {
-          try {
-            this.gridItems = this.gridItems.filter(item => item.id !== itemId);
-            this.displayMessage({
-              message: `'${item.title}' DELETED.`,
-              duration: 5000
-            });
-          } catch (error) {
-            this.displayMessage({
-              message: `FAILED TO DELETE '${item.title}'. PLEASE TRY AGAIN.`,
-              duration: 5000
-            });
-          }
-        },
-        onNo: () => {
-          console.log('Deletion cancelled.');
-        }
-      });
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
+  }
+
+  uploadFile(event : any) {
+    const file = event.target.files[0];
+    if (file && file.type === "application/pdf") {
+      this.uploadService.uploadFile(file);
+    } else {
+      console.error("Only PDF files are supported.");
     }
   }
+
 
   displayMessage({message, duration, showOptions = false, onYes, onNo}: { message: any, duration: any, showOptions?: boolean, onYes?: () => void, onNo?: () => void }) {
     this.message = message;

@@ -16,6 +16,9 @@ import { SignInComponent } from './auth/sign-in/sign-in.component';
 import { ProfileComponent } from './profile/profile.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { NotFoundComponent } from './not-found/not-found.component';
+import {AngularFireStorage} from "@angular/fire/compat/storage/storage";
+import {AngularFireStorageModule} from "@angular/fire/compat/storage";
+import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
 
 @NgModule({
   declarations: [
@@ -36,7 +39,9 @@ import { NotFoundComponent } from './not-found/not-found.component';
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAuthModule,
     ReactiveFormsModule,
-    PdfViewerModule
+    PdfViewerModule,
+    AngularFireStorageModule,
+    AngularFirestoreModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

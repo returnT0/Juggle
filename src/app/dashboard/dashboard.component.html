@@ -1,17 +1,25 @@
 <section class="pt-10 flex flex-col p-6 tracking-wide transition-all ease-in-out">
   <div class="grid grid-cols-4 gap-6">
-    <div class="col-span-1" *ngFor="let item of gridItems">
+    <div class="col-span-1" *ngFor="let item of pdfUrls">
       <span class="relative block max-w-sm p-5 bg-dark-3 border border-dark-4 rounded-sm shadow ">
         <img src="assets/arrow.svg" alt="Arrow Icon" class="absolute right-0 top-0 mr-2 mt-2 w-8 h-8 cursor-pointer hover:border-2 hover:border-light-1 active:border-secondary">
         <div>
-          <h5 class="mb-2 text-heading4-thin text-light-1 font-gabarito tracking-wider">{{ item.title }}</h5>
-          <p class="font-cormorant-garamond text-body-normal text-light-2/60">{{ item.description }}</p>
+          <h5 class="mb-2 text-heading4-thin text-light-1 font-gabarito tracking-wider">TITLE</h5>
+          <p class="font-cormorant-garamond text-body-normal text-light-2/60">BODY</p>
           <div class="pt-4 space-x-2">
-            <button class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-sm px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">SELECT</button>
-            <button (click)="deleteItem(item.id!)" class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-sm px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">DELETE</button>
+            <a href="{{ item }}" target="_blank" class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-sm px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">VIEW</a>
           </div>
         </div>
       </span>
+    </div>
+    <div class="col-span-1">
+      <input type="file" style="display: none" #fileInput (change)="uploadFile($event)">
+      <button (click)="fileInput.click()" class="relative block w-full h-full p-5 bg-dark-3 border border-dark-4 rounded-sm shadow hover:border-2
+      hover:border-light-1 active:border-secondary">
+        <div class="flex justify-center items-center">
+          <img src="assets/add.svg" alt="Arrow Icon" class="w-16 h-16 cursor-pointer">
+        </div>
+      </button>
     </div>
   </div>
 </section>
