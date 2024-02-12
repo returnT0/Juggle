@@ -1,39 +1,60 @@
 <section class="pt-10 flex flex-col p-6 tracking-wide transition-all ease-in-out">
-  <div class="grid grid-cols-4 gap-6">
-    <div class="col-span-1" *ngFor="let item of pdfUrls">
-      <span class="relative block max-w-sm p-5 bg-dark-3 border border-dark-4 rounded-sm shadow ">
-        <img src="assets/arrow.svg" alt="Arrow Icon" class="absolute right-0 top-0 mr-2 mt-2 w-8 h-8 cursor-pointer hover:border-2 hover:border-light-1 active:border-secondary">
-        <div>
-          <h5 class="mb-2 text-heading4-thin text-light-1 font-gabarito tracking-wider">TITLE</h5>
-          <p class="font-cormorant-garamond text-body-normal text-light-2/60">BODY</p>
-          <div class="pt-4 space-x-2">
-            <a href="{{ item }}" target="_blank" class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-sm px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">VIEW</a>
-          </div>
-        </div>
-      </span>
-    </div>
+  <div class="grid grid-cols-5 gap-6">
     <div class="col-span-1">
-      <input type="file" style="display: none" #fileInput (change)="uploadFile($event)">
-      <button (click)="fileInput.click()" class="relative block w-full h-full p-5 bg-dark-3 border border-dark-4 rounded-sm shadow hover:border-2
-      hover:border-light-1 active:border-secondary">
+      <input type="file" style="display: none" #fileInput (change)="uploadFiles($event)" multiple>
+      <button (click)="fileInput.click()" class="relative block w-[14em] h-[12em]  p-5 bg-dark-3 border border-dark-4 rounded-lg
+      shadow hover:border-2 hover:border-light-1/70 active:border-secondary">
         <div class="flex justify-center items-center">
           <img src="assets/add.svg" alt="Arrow Icon" class="w-16 h-16 cursor-pointer">
         </div>
       </button>
     </div>
+    <div class="col-span-1" *ngFor="let item of pdfUrls; let i = index">
+      <div
+        class="flex flex-col justify-between relative w-[14em] h-[12em] p-5 bg-dark-3 border border-dark-4 rounded-lg shadow ">
+        <a href="{{ item.url }}" target="_blank">
+          <img src="assets/arrow.svg" alt="Arrow Icon"
+               class="absolute right-0 top-0 mr-2 mt-2 w-8 h-8 cursor-pointer hover:border-2 hover:border-light-1/70
+               hover:rounded-lg active:border-secondary">
+        </a>
+        <div class="flex flex-col justify-between">
+          <h5 class="flex mb-2 text-heading2-normal text-light-1 font-gabarito tracking-wider">
+            {{ item.title }}
+          </h5>
+        </div>
+        <div class="flex pt-4 space-x-2">
+          <button (click)="deletePdf(item.path, i)" class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-xl
+          px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">DELETE
+          </button>
+        </div>
+
+      </div>
+    </div>
   </div>
 </section>
 <div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
-  <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default" role="alert">
+  <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default"
+       role="alert">
     <div class="ms-3 text-sm font-normal whitespace-nowrap">{{ message }}</div>
+    <input *ngIf="showInput" [(ngModel)]="fileNameInput" type="text"
+           class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm focus:outline-none focus:ring-0 focus:border-dark-1 "/>
     <div *ngIf="showOptions" class="flex gap-x-2">
-      <button (click)="handleYes()" class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">YES</button>
-      <button (click)="handleNo()" class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">NO</button>
+      <button (click)="handleYes()"
+              class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">
+        YES
+      </button>
+      <button (click)="handleNo()"
+              class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">
+        NO
+      </button>
     </div>
-    <button (click)="cancel()" class="ms-auto -mx-1.5 -my-1.5 bg-none text-dark-5 focus:ring-0 p-1.5 hover:text-red-600 inline-flex items-center justify-center h-8 w-8" data-dismiss-target="#toast-default" aria-label="Close">
+    <button (click)="cancel()"
+            class="ms-auto -mx-1.5 -my-1.5 bg-none text-dark-5 focus:ring-0 p-1.5 hover:text-red-600 inline-flex items-center justify-center h-8 w-8"
+            data-dismiss-target="#toast-default" aria-label="Close">
       <span class="sr-only">Close</span>
       <svg class="!w-4 !h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
       </svg>
     </button>
   </div>

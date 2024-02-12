@@ -7,7 +7,7 @@ import {PdfViewerModule} from "ng2-pdf-viewer";
 import {AngularFireModule} from "@angular/fire/compat";
 import {environment} from "../environments/environment";
 import {AngularFireAuthModule} from "@angular/fire/compat/auth";
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { NavComponent } from './nav/nav.component';
 import { LandingComponent } from './landing/landing.component';
 import { FooterComponent } from './footer/footer.component';
@@ -32,17 +32,18 @@ import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
     DashboardComponent,
     NotFoundComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
 
-    AngularFireModule.initializeApp(environment.firebase),
-    AngularFireAuthModule,
-    ReactiveFormsModule,
-    PdfViewerModule,
-    AngularFireStorageModule,
-    AngularFirestoreModule,
-  ],
+        AngularFireModule.initializeApp(environment.firebase),
+        AngularFireAuthModule,
+        ReactiveFormsModule,
+        PdfViewerModule,
+        AngularFireStorageModule,
+        AngularFirestoreModule,
+        FormsModule,
+    ],
   providers: [],
   bootstrap: [AppComponent]
 })
