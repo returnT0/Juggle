@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadService } from "../shared/upload.service";
 import { Subscription } from "rxjs";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-dashboard',
@@ -13,10 +14,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showOptions!: boolean;
   fileNameInput: string = '';
   showInput!: boolean;
-  pdfUrls: { url: string; title: string; path: string; }[] = [];
+  pdfUrls: { id: string; url: string; title: string; path: string; }[] = [];
   private sub!: Subscription;
 
-  constructor(private uploadService: UploadService) {}
+  constructor(private uploadService: UploadService, private router: Router) {}
 
   ngOnInit(): void {
     this.refreshPdfList();
@@ -26,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.uploadService.fetchAllPDFs().subscribe(files => {
         this.pdfUrls = files.map(file => ({
+          id: file.id,
           url: file.url,
           title: this.extractTitleFromUrl(file.url),
           path: file.path
@@ -161,6 +163,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
     }
   }
+
+  viewPdf(pdfId: string): void {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/view-pdf', pdfId])
+    );
+
+    window.open(url, '_blank');
+  }
+
 
   displayMessage({message, duration, showOptions = false, showInput = false, onYes, onNo}: { message: any, duration: any, showOptions?: boolean, showInput?: boolean, onYes?: (fileNameInput: string) => void, onNo?: () => void }) {
     this.message = message;

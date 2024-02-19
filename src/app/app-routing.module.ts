@@ -7,6 +7,7 @@ import {NotFoundComponent} from "./not-found/not-found.component";
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {AuthGuard} from "./guards/auth.guard";
 import {ProfileComponent} from "./profile/profile.component";
+import {PdfviewerComponent} from "./pdfviewer/pdfviewer.component";
 
 const routes: Routes = [
   {path: '', redirectTo: '/landing', pathMatch: 'full'},
@@ -15,6 +16,7 @@ const routes: Routes = [
   {path: 'sign-up', component: SignUpComponent},
   {path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
   {path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
+  {path: 'view-pdf/:id', component: PdfviewerComponent },
   {path: '**', component: NotFoundComponent}
 ];
 

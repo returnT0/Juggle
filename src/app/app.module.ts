@@ -19,6 +19,7 @@ import { NotFoundComponent } from './not-found/not-found.component';
 import {AngularFireStorage} from "@angular/fire/compat/storage/storage";
 import {AngularFireStorageModule} from "@angular/fire/compat/storage";
 import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
+import { PdfviewerComponent } from './pdfviewer/pdfviewer.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +31,8 @@ import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
     SignInComponent,
     ProfileComponent,
     DashboardComponent,
-    NotFoundComponent
+    NotFoundComponent,
+    PdfviewerComponent
   ],
     imports: [
         BrowserModule,

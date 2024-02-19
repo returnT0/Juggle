@@ -1,0 +1,26 @@
+<section class="w-full grid grid-cols-2 items-center text-dark-1 h-full overflow-hidden bg-light-2 p-3 rounded-2xl">
+<pdf-viewer [src]="pdfSrc" class="col-span-1 w-[51.6vw] h-[72vh] bg-light-2 self-stretch rounded-sm"></pdf-viewer>
+  <div class="col-span-1 w-full h-full pl-36">
+    <div class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center p-1.5">
+      <div class="col-span-1 items-start">
+        <div class="flex flex-row gap-x-2.5">
+          <a [routerLink]="['/dashboard']"
+             class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            <span class="text-small-regular">close</span>
+          </a>
+          <a class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            <span class="text-small-regular">download</span>
+          </a>
+        </div>
+      </div>
+      <div class="col-span-1 items-end">
+        <div class="flex flex-row justify-end">
+          <button class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            <span class="text-small-regular">edit</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+

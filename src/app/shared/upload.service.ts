@@ -47,12 +47,15 @@ export class UploadService {
     await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
   }
 
-  fetchAllPDFs(): Observable<{ url: string, path: string }[]> {
+  fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
+    // Example modification to include an ID, which could be the Firebase file name or a custom ID
     const ref = this.storage.storage.ref('pdfs');
     return new Observable((observer) => {
       ref.listAll().then(result => {
         const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
-          url, path: item.fullPath // Get the full path of the file
+          id: item.name, // Use the file name or another unique identifier as the ID
+          url,
+          path: item.fullPath
         })));
         Promise.all(metadataPromises).then(files => {
           observer.next(files);
@@ -62,9 +65,18 @@ export class UploadService {
     });
   }
 
+  async getPDFUrlById(pdfId: string): Promise<string> {
+    try {
+      const fileRef = this.storage.ref(`pdfs/${pdfId}`);
+      return await fileRef.getDownloadURL().toPromise();
+    } catch (error) {
+      console.error("Error fetching PDF URL by ID:", error);
+      throw new Error("Could not fetch PDF URL.");
+    }
+  }
+
   async deleteFile(filePath: string): Promise<void> {
     try {
-      // Use ref() with a child path
       const fileRef = this.storage.ref(filePath);
       await fileRef.delete();
       console.log("File successfully deleted");
