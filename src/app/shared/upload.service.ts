@@ -48,12 +48,11 @@ export class UploadService {
   }
 
   fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
-    // Example modification to include an ID, which could be the Firebase file name or a custom ID
     const ref = this.storage.storage.ref('pdfs');
     return new Observable((observer) => {
       ref.listAll().then(result => {
         const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
-          id: item.name, // Use the file name or another unique identifier as the ID
+          id: item.name,
           url,
           path: item.fullPath
         })));
@@ -82,7 +81,7 @@ export class UploadService {
       console.log("File successfully deleted");
     } catch (error) {
       console.error("Error while deleting file:", error);
-      throw error; // Rethrow or handle as needed
+      throw error;
     }
   }
 

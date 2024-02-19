@@ -29,6 +29,15 @@
       USER
     </a>
   </div>
+  <div class='flex flex-row justify-center items-center gap-x-28'
+       *ngIf="isAuthenticated && !isProfilePage && !isDashboardPage">
+    <a [routerLink]="['/dashboard']" class='flex nav_link nav_link_heading'>
+      DASHBOARD
+    </a>
+    <a [routerLink]="['/profile']" class='flex nav_link nav_link_heading'>
+      USER
+    </a>
+  </div>
   <div class='flex' *ngIf="isAuthenticated">
     <button (click)="signOut()" class='nav_link nav_link_heading'>
       SIGN OUT

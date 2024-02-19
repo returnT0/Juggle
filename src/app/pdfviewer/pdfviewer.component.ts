@@ -9,8 +9,31 @@ import {UploadService} from "../shared/upload.service";
 })
 export class PdfviewerComponent implements OnInit {
   public pdfSrc: string = '';
+  conditions: { text: string; visible: boolean }[] = [];
+  showOverlay = false;
 
-  constructor(private route: ActivatedRoute, private uploadService: UploadService) { }
+  constructor(private route: ActivatedRoute, private uploadService: UploadService) {
+  }
+
+  toggleOverlay() {
+    this.showOverlay = !this.showOverlay;
+  }
+
+  toggleVisibility(index: number) {
+    this.conditions[index].visible = !this.conditions[index].visible;
+  }
+
+
+  addCondition(newConditionText: string) {
+    if (newConditionText) {
+      this.conditions.push({text: newConditionText, visible: true});
+    }
+  }
+
+  deleteCondition(index: number) {
+    this.conditions.splice(index, 1);
+  }
+
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -22,7 +45,6 @@ export class PdfviewerComponent implements OnInit {
   fetchPdfUrlById(pdfId: string): void {
     this.uploadService.getPDFUrlById(pdfId).then(url => {
       this.pdfSrc = url;
-    }
-    ).catch(error => console.error(error));
+    }).catch(error => console.error(error));
   }
 }

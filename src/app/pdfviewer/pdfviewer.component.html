@@ -1,26 +1,116 @@
-<section class="w-full grid grid-cols-2 items-center text-dark-1 h-full overflow-hidden bg-light-2 p-3 rounded-2xl">
-<pdf-viewer [src]="pdfSrc" class="col-span-1 w-[51.6vw] h-[72vh] bg-light-2 self-stretch rounded-sm"></pdf-viewer>
-  <div class="col-span-1 w-full h-full pl-36">
-    <div class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center p-1.5">
-      <div class="col-span-1 items-start">
-        <div class="flex flex-row gap-x-2.5">
-          <a [routerLink]="['/dashboard']"
-             class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
-            <span class="text-small-regular">close</span>
-          </a>
-          <a class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
-            <span class="text-small-regular">download</span>
-          </a>
+<section class="relative w-full grid grid-cols-2 items-center text-dark-1 h-full overflow-hidden bg-light-2 p-3 rounded-2xl">
+  <pdf-viewer [src]="pdfSrc"
+              class="col-span-1 min-w-[51.6vw] max-w-[70vw] min-h-[72vh] max-h-[90vh] bg-light-2 self-stretch rounded-sm"></pdf-viewer>
+  <div *ngIf="showOverlay" class="absolute inset-0 bg-dark-5 bg-opacity-40 grid grid-cols-2 items-center z-10">
+    <div class="col-start-1 col-span-2 flex p-3">
+      <div
+        class="flex flex-col justify-between bg-light-2 py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
+        <div class="fle flex-col w-full space-y-6">
+          <div class="flex flex-row w-full">
+            <div class="flex justify-start w-full items-center font-gabarito text-dark-1">
+              <h1 class="text-heading3-normal">CONDITIONS</h1>
+            </div>
+            <div class="flex flex-row justify-end w-full gap-x-4 font-jetbrains">
+              <button
+                class="bg-dark-1 text-light-1 rounded-full items-center py-1 px-4 cursor-pointer"
+                (click)="toggleOverlay()">
+                <span class="text-small-regular">close</span>
+              </button>
+              <button
+                class="bg-dark-1 text-light-1 rounded-full items-center py-1 px-4 cursor-pointer"
+                (click)="toggleOverlay()">
+                <span class="text-small-regular">save</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-y-3 px-5 w-full">
+            <div *ngFor="let condition of conditions; let i = index"
+                 class="flex flex-row items-center justify-center h-fit">
+              <button
+                class="bg-dark-1 text-light-1 rounded-l-full items-center py-1 px-3 cursor-pointer font-gabarito"
+                (click)="toggleVisibility(i)">
+                <img src="assets/{{condition.visible ? 'visibility.svg' : 'visibility_off.svg'}}"
+                     alt="toggle visibility" class="w-6 h-6">
+              </button>
+              <div
+                class="w-full px-3 py-1 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1 h-8">
+                {{ condition.text }}
+              </div>
+              <button
+                class="bg-dark-1 text-light-1 items-center rounded-r-full py-1 px-3 cursor-pointer font-gabarito"
+                (click)="deleteCondition(i)">
+                <img src="assets/delete.svg" alt="delete" class="w-6 h-6">
+              </button>
+            </div>
+
+          </div>
         </div>
-      </div>
-      <div class="col-span-1 items-end">
-        <div class="flex flex-row justify-end">
-          <button class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
-            <span class="text-small-regular">edit</span>
+        <div class="flex w-full justify-end">
+          <input #newConditionInput type="text"
+                 class="w-full px-3 py-1 rounded-l-full border-0 font-gabarito text-base-regular tracking-wide bg-dark-1
+                   focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1"
+                 placeholder="Condition...">
+          <button
+            class="bg-dark-1 text-light-1 rounded-r-full items-center py-1 px-4 cursor-pointer w-40 border-0"
+            (click)="addCondition(newConditionInput.value); newConditionInput.value=''">
+            <span class="text-small-regular">new condition</span>
           </button>
         </div>
       </div>
     </div>
   </div>
+  <div class="col-span-1 w-full h-full pl-32">
+    <div class="flex flex-col justify-start w-full h-full rounded-xl bg-white shadow shadow-secondary/10">
+      <div
+        class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center py-2 px-3">
+        <div class="col-span-1 items-start">
+          <div class="flex flex-row gap-x-2.5">
+            <a [routerLink]="['/dashboard']"
+               class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+              <span class="text-small-regular">close</span>
+            </a>
+            <a
+              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+              <span class="text-small-regular">download</span>
+            </a>
+          </div>
+        </div>
+        <div class="col-span-1 items-end">
+          <div class="flex flex-row justify-end">
+            <button
+              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40"
+              (click)="toggleOverlay()">
+              <span class="text-small-regular">edit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="w-full h-full p-4">
+        <div class="flex flex-col gap-y-4">
+            <textarea disabled
+                      class="w-full h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
+                      placeholder="Current pdf file has information about..."></textarea>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center py-2 px-3">
+        <div class="col-span-1 items-start">
+          <div class="flex flex-row">
+            <a
+              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+              <span class="text-small-regular">stop analyzing</span>
+            </a>
+          </div>
+        </div>
+        <div class="col-span-1 items-end">
+          <div class="flex flex-row justify-end">
+            <button
+              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+              <span class="text-small-regular">launch</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
-
