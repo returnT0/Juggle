@@ -1,1 +1,6 @@
 <h1 class="py-4 text-secondary text-[20em]">404</h1>
+<div class="text-light-1 flex flex-row">
+  <button (click)="callOpenAI()">Test OpenAI Service</button>
+  <div *ngIf="responseText">Response: {{ responseText }}</div>
+</div>
+

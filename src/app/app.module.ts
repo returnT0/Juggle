@@ -20,6 +20,7 @@ import {AngularFireStorage} from "@angular/fire/compat/storage/storage";
 import {AngularFireStorageModule} from "@angular/fire/compat/storage";
 import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
 import { PdfviewerComponent } from './pdfviewer/pdfviewer.component';
+import { HttpClientModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -45,6 +46,7 @@ import { PdfviewerComponent } from './pdfviewer/pdfviewer.component';
         AngularFireStorageModule,
         AngularFirestoreModule,
         FormsModule,
+        HttpClientModule,
     ],
   providers: [],
   bootstrap: [AppComponent]

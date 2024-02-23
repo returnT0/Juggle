@@ -16,5 +16,6 @@ export const defaultEnvironment = {
 
     measurementId: "G-5525F6DEDT"
   },
+  openai_api_key: "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",
   production: false,
 };
