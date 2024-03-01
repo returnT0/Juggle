@@ -134,6 +134,47 @@
     @apply font-sans;
   }
 
+  .viewer-container {
+    @apply relative w-full grid grid-cols-2 items-center text-dark-1 h-full overflow-hidden bg-light-2 p-3 rounded-2xl;
+  }
+
+  .viewer-container .pdf-viewer {
+    @apply col-span-1 min-w-[51.6vw] max-w-[70vw] min-h-[72vh] max-h-[90vh] bg-light-2 self-stretch rounded-sm z-10;
+  }
+
+  .conditions-container {
+    @apply absolute inset-0 bg-opacity-40 grid items-center bg-dark-5 grid-cols-2 z-20;
+  }
+
+  .pattern-container {
+    @apply absolute inset-0 bg-opacity-40 grid items-center bg-dark-1 grid-cols-7 z-30;
+  }
+
+  .conditions-container .grid-conditions {
+    @apply col-start-1 col-span-2 flex p-3;
+  }
+
+  .conditions-container .grid-conditions .conditions-content {
+    @apply flex flex-col justify-between bg-light-2 py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]
+  }
+
+  .conditions-container .grid-conditions .conditions-content .conditions-header {
+    @apply flex justify-start w-full items-center font-gabarito text-dark-1 text-heading3-normal;
+  }
+
+  .base-button {
+    @apply bg-dark-1 text-light-1 rounded-full items-center py-1 px-4 cursor-pointer;
+  }
+
+  .conditions-container .grid-conditions .conditions-content .right-side-buttons {
+    @apply flex flex-row justify-end w-full gap-x-4 font-jetbrains;
+  }
+
+  .conditions-container .grid-conditions .conditions-content .conditions-list{
+    @apply flex flex-row items-center justify-center h-fit;
+  }
+
+
 }
 
 /* Clerk Responsive fix */

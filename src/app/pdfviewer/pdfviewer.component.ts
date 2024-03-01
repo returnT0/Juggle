@@ -1,50 +1,294 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from "@angular/router";
-import {UploadService} from "../shared/upload.service";
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { UploadService } from '../shared/upload.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-pdfviewer',
   templateUrl: './pdfviewer.component.html',
-  styleUrl: './pdfviewer.component.css'
+  styleUrls: ['./pdfviewer.component.css'],
 })
-export class PdfviewerComponent implements OnInit {
-  public pdfSrc: string = '';
+export class PdfviewerComponent implements OnInit, OnDestroy {
+  pdfSrc: string = '';
   conditions: { text: string; visible: boolean }[] = [];
-  showOverlay = false;
+  showOverlay = true;
+  showPattern = true;
+  patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [
+    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },    {
+      name: 'Pattern 1',
+      conditions: [
+        { text: 'Condition 1', visible: true },
+        { text: 'Condition 2', visible: false },
+      ],
+    },
+    {
+      name: 'Pattern 2',
+      conditions: [
+        { text: 'Condition 3', visible: true },
+        { text: 'Condition 4', visible: true },
+      ],
+    },
+  ];
+  appliedPatterns: number[] = []; // Tracks indices of applied patterns
+  editingPatternIndex: number | null = null;
+  savedConditions: string[] = [];
+  selectedCondition: string = 'makeYourOwn';
+  newConditionValue: string = '';
+  secondaryOptions: { [key: string]: string[] } = {
+    textPatternExtraction: [
+      'Extract email addresses',
+      'Extract phone numbers',
+      'Extract data',
+      'Detect and Extract Financial Data',
+    ],
+    extractStructuredData: [
+      'Extract data from form fields',
+      'Extract list items (bullets/numbers)',
+      'Extract highlighted or annotated text',
+    ],
+    Saved: this.savedConditions,
+  };
+  secondarySelection: string = '';
 
-  constructor(private route: ActivatedRoute, private uploadService: UploadService) {
-  }
+  private routeSub: Subscription | undefined;
 
-  toggleOverlay() {
-    this.showOverlay = !this.showOverlay;
-  }
-
-  toggleVisibility(index: number) {
-    this.conditions[index].visible = !this.conditions[index].visible;
-  }
-
-
-  addCondition(newConditionText: string) {
-    if (newConditionText) {
-      this.conditions.push({text: newConditionText, visible: true});
-    }
-  }
-
-  deleteCondition(index: number) {
-    this.conditions.splice(index, 1);
-  }
-
+  constructor(private route: ActivatedRoute, private uploadService: UploadService) {}
 
   ngOnInit(): void {
-    this.route.params.subscribe(params => {
+    this.routeSub = this.route.params.subscribe((params) => {
       const pdfId = params['id'];
       this.fetchPdfUrlById(pdfId);
     });
   }
 
-  fetchPdfUrlById(pdfId: string): void {
-    this.uploadService.getPDFUrlById(pdfId).then(url => {
-      this.pdfSrc = url;
-    }).catch(error => console.error(error));
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
+  }
+
+  private fetchPdfUrlById(pdfId: string): void {
+    this.uploadService
+      .getPDFUrlById(pdfId)
+      .then((url) => {
+        this.pdfSrc = url;
+      })
+      .catch((error) => console.error(error));
+  }
+
+  toggleOverlay(): void {
+    this.showOverlay = !this.showOverlay;
+  }
+
+  togglePattern(): void {
+    this.showPattern = !this.showPattern;
+  }
+
+  toggleVisibility(index: number): void {
+    this.conditions[index].visible = !this.conditions[index].visible;
+  }
+
+  addCondition(): void {
+    let conditionValue = this.selectedCondition === 'makeYourOwn' ? this.newConditionValue : this.secondarySelection;
+    const conditionExists = this.conditions.some((condition) => condition.text === conditionValue);
+
+    if (conditionValue && !conditionExists) {
+      this.conditions.push({ text: conditionValue, visible: true });
+      if (this.selectedCondition === 'makeYourOwn') {
+        this.newConditionValue = '';
+      } else {
+        this.secondarySelection = '';
+      }
+    } else if (conditionExists) {
+      console.warn('Condition already exists:', conditionValue);
+    }
+  }
+
+  saveCondition(): void {
+    if (this.newConditionValue && !this.savedConditions.includes(this.newConditionValue)) {
+      this.savedConditions.push(this.newConditionValue);
+      this.secondaryOptions['Saved'] = [...this.savedConditions];
+    } else {
+      console.warn('Condition is empty or already saved:', this.newConditionValue);
+    }
+  }
+
+  applyPatternConditions(patternIndex: number): void {
+    const patternConditions = this.patterns[patternIndex].conditions;
+    patternConditions.forEach(pc => {
+      if (!this.conditions.some(c => c.text === pc.text)) {
+        this.conditions.push({ ...pc });
+      }
+    });
+  }
+
+  editPatternName(patternIndex: number, newName: string): void {
+    if (newName.trim().length === 0) {
+      alert('Pattern name cannot be empty.');
+      return;
+    }
+
+    this.patterns[patternIndex].name = newName;
+  }
+
+  startEditingPattern(patternIndex: number): void {
+    this.editingPatternIndex = patternIndex;
+    // Initialize form or temporary state if needed
+  }
+
+  savePatternChanges(patternIndex: number): void {
+    // Save changes made to the pattern
+    // For name changes, you could directly bind the input to the pattern's name or use a temporary variable
+    this.editingPatternIndex = null; // Exit editing mode
+  }
+
+  cancelEditing(): void {
+    this.editingPatternIndex = null; // Exit editing mode without saving changes
+  }
+
+
+  togglePatternConditions(patternIndex: number): void {
+    const patternConditions = this.patterns[patternIndex].conditions;
+    if (this.appliedPatterns.includes(patternIndex)) {
+      // Pattern is already applied, so remove its conditions
+      this.conditions = this.conditions.filter(c => !patternConditions.some(pc => pc.text === c.text));
+      this.appliedPatterns = this.appliedPatterns.filter(i => i !== patternIndex);
+    } else {
+      // Apply pattern conditions
+      patternConditions.forEach(pc => {
+        if (!this.conditions.some(c => c.text === pc.text)) {
+          this.conditions.push({ ...pc });
+        }
+      });
+      this.appliedPatterns.push(patternIndex);
+    }
+  }
+
+  deletePattern(patternIndex: number): void {
+    // Remove the pattern from the patterns array
+    this.patterns.splice(patternIndex, 1);
+
+    // If using a more complex state management, you might need to update related states here as well
+  }
+
+  addPattern(): void {
+    const patternName = `pattern_${this.patterns.length + 1}`;
+    const newPattern = {
+      name: patternName,
+      conditions: [...this.conditions],
+    };
+
+    const isDuplicate = this.patterns.some(pattern =>
+      pattern.conditions.length === newPattern.conditions.length &&
+      pattern.conditions.every(pc => newPattern.conditions.some(nc => nc.text === pc.text))
+    );
+
+    if (!isDuplicate) {
+      this.patterns.push(newPattern);
+    } else {
+      alert('A pattern with the exact same conditions already exists.');
+    }
+  }
+
+  onSecondarySelectionChange(value: string): void {
+    this.secondarySelection = value;
+  }
+
+  deleteCondition(index: number): void {
+    this.conditions.splice(index, 1);
+  }
+
+  onPrimarySelectionChange(value: string): void {
+    this.selectedCondition = value;
+    this.secondarySelection = '';
   }
 }
