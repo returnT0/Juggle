@@ -41,22 +41,25 @@
               <div *ngFor="let condition of pattern.conditions" class="pattern-condition">
                 {{condition.text}}
               </div>
-              <button
-                class="absolute right-0 top-0 mr-1.5 mt-1.5 bg-light-1 rounded-2xl items-center py-2 px-2 cursor-pointer font-gabarito"
-                (click)="togglePatternConditions(pIndex)">
-                <img src="assets/{{appliedPatterns.includes(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
-                     alt="toggle visibility" class="w-6 h-6">
-              </button>
-              <button
-                class="absolute right-0 top-0 mt-1.5 mr-14 bg-light-1 rounded-2xl items-center py-2 px-2 cursor-pointer font-gabarito"
-                (click)="deletePattern(pIndex)">
-                <img src="assets/delete.svg" alt="delete" class="w-6 h-6">
-              </button>
-              <button
-                class="bg-light-1 w-full rounded-2xl items-center self-center py-0.5 px-2 cursor-pointer"
-                (click)="startEditingPattern(pIndex)">
-                <span class="text-small-regular">edit</span>
-              </button>
+              <div class="absolute right-0 top-0 mr-1.5 mt-1.5 bg-white rounded-xl">
+                <button
+                  class="bg-light-1/80 rounded-xl transition-colors ease-in-out items-center py-2 px-2 cursor-pointer font-gabarito hover:bg-dark-1"
+                  (click)="togglePatternConditions(pIndex)">
+                  <img src="assets/{{appliedPatterns.includes(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
+                       alt="toggle visibility" class="w-4 h-4">
+                </button>
+                <button
+                  class="bg-light-1/80 rounded-xl transition-colors ease-in-out items-center py-2 px-2 cursor-pointer font-gabarito hover:bg-dark-1"
+                  (click)="deletePattern(pIndex)">
+                  <img src="assets/delete.svg" alt="delete" class="w-4 h-4">
+                </button>
+              </div>
+<!--              TODO: implement better layout for button, possible extra modal window-->
+<!--              <button-->
+<!--                class="bg-light-1 w-full rounded-2xl items-center self-center py-0.5 px-2 cursor-pointer"-->
+<!--                (click)="startEditingPattern(pIndex)">-->
+<!--                <span class="text-small-regular">edit</span>-->
+<!--              </button>-->
             </div>
           </div>
         </div>

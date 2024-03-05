@@ -11,116 +11,46 @@ import { Subscription } from 'rxjs';
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc: string = '';
   conditions: { text: string; visible: boolean }[] = [];
-  showOverlay = true;
-  showPattern = true;
+  showOverlay = false;
+  showPattern = false;
   patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [
     {
-      name: 'Pattern 1',
+      name: 'pattern_1',
       conditions: [
         { text: 'Condition 1', visible: true },
         { text: 'Condition 2', visible: false },
       ],
     },
     {
-      name: 'Pattern 2',
+      name: 'pattern_2',
       conditions: [
         { text: 'Condition 3', visible: true },
         { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
       ],
     },
     {
-      name: 'Pattern 2',
+      name: 'pattern_3',
       conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
+        { text: 'Condition 5', visible: true },
+        { text: 'Condition 6', visible: false },
       ],
     },
     {
-      name: 'Pattern 2',
+      name: 'pattern_4',
       conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
+        { text: 'Condition 2', visible: true },
+        { text: 'Condition 4', visible: false },
       ],
     },
     {
-      name: 'Pattern 2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
+      name: 'pattern_5',
       conditions: [
         { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
-      ],
-    },
-    {
-      name: 'Pattern 2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
-      ],
-    },
-    {
-      name: 'Pattern 2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
-      ],
-    },
-    {
-      name: 'Pattern 2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },    {
-      name: 'Pattern 1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
-      ],
-    },
-    {
-      name: 'Pattern 2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
+        { text: 'Condition 7', visible: false },
       ],
     },
   ];
-  appliedPatterns: number[] = []; // Tracks indices of applied patterns
+  appliedPatterns: number[] = [];
   editingPatternIndex: number | null = null;
   savedConditions: string[] = [];
   selectedCondition: string = 'makeYourOwn';
@@ -222,28 +152,23 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   startEditingPattern(patternIndex: number): void {
     this.editingPatternIndex = patternIndex;
-    // Initialize form or temporary state if needed
   }
 
   savePatternChanges(patternIndex: number): void {
-    // Save changes made to the pattern
-    // For name changes, you could directly bind the input to the pattern's name or use a temporary variable
-    this.editingPatternIndex = null; // Exit editing mode
+    this.editingPatternIndex = null;
   }
 
   cancelEditing(): void {
-    this.editingPatternIndex = null; // Exit editing mode without saving changes
+    this.editingPatternIndex = null;
   }
 
 
   togglePatternConditions(patternIndex: number): void {
     const patternConditions = this.patterns[patternIndex].conditions;
     if (this.appliedPatterns.includes(patternIndex)) {
-      // Pattern is already applied, so remove its conditions
       this.conditions = this.conditions.filter(c => !patternConditions.some(pc => pc.text === c.text));
       this.appliedPatterns = this.appliedPatterns.filter(i => i !== patternIndex);
     } else {
-      // Apply pattern conditions
       patternConditions.forEach(pc => {
         if (!this.conditions.some(c => c.text === pc.text)) {
           this.conditions.push({ ...pc });
@@ -254,10 +179,8 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   }
 
   deletePattern(patternIndex: number): void {
-    // Remove the pattern from the patterns array
     this.patterns.splice(patternIndex, 1);
 
-    // If using a more complex state management, you might need to update related states here as well
   }
 
   addPattern(): void {
