@@ -163,7 +163,7 @@
   }
 
   .base-button {
-    @apply bg-dark-1 text-light-1 rounded-full items-center py-1 px-4 cursor-pointer;
+    @apply bg-dark-1 text-light-1 rounded-full items-center py-1 px-4 cursor-pointer !important;
   }
 
   .conditions-container .grid-conditions .conditions-content .right-side-buttons {
@@ -173,6 +173,16 @@
   .conditions-container .grid-conditions .conditions-content .conditions-list{
     @apply flex flex-row items-center justify-center h-fit;
   }
+
+  .conditions-container .grid-conditions .conditions-content .conditions-list .conditions-list-button {
+    @apply bg-dark-1 text-light-1 items-center py-1 px-3 cursor-pointer;
+  }
+
+  .conditions-container .grid-conditions .conditions-content .conditions-list .conditions-list-label {
+    @apply w-full px-3 py-1 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 text-light-1 h-8;
+  }
+
+
 
 
 }

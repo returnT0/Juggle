@@ -3,13 +3,14 @@ import {AngularFireStorage} from "@angular/fire/compat/storage";
 import {lastValueFrom, Observable} from "rxjs";
 import {finalize} from 'rxjs/operators';
 import {PDFDocument} from 'pdf-lib';
+import {AngularFirestore} from "@angular/fire/compat/firestore";
 
 @Injectable({
   providedIn: 'root'
 })
 export class UploadService {
 
-  constructor(private storage: AngularFireStorage) {
+  constructor(private storage: AngularFireStorage, private db: AngularFirestore) {
   }
 
   async uploadFile(file: File | Blob, fileName: string): Promise<string> {
@@ -84,5 +85,37 @@ export class UploadService {
       throw error;
     }
   }
+
+  fetchConditionsByPdfId(pdfId: string): Observable<any[]> {
+    return this.db.collection('conditions', ref => ref.where('pdfId', '==', pdfId)).valueChanges();
+  }
+
+  saveCondition(pdfId: string, condition: { text: string; visible: boolean }): Promise<void> {
+    return this.db.collection('conditions').add({ ...condition, pdfId })
+      .then(() => {}) // Explicitly resolve to void
+      .catch(error => {
+        console.error("Error saving condition:", error);
+        throw new Error("Failed to save condition.");
+      });
+  }
+
+
+  deleteCondition(conditionId: string): Promise<void> {
+    return this.db.collection('conditions').doc(conditionId).delete();
+  }
+
+  savePattern(pdfId: string, pattern: { name: string; conditions: { text: string; visible: boolean }[] }): Promise<void> {
+    return this.db.collection('patterns').add({ ...pattern, pdfId })
+      .then(() => {}) // Explicitly resolve to void
+      .catch(error => {
+        console.error("Error saving pattern:", error);
+        throw new Error("Failed to save pattern.");
+      });
+  }
+
+  deletePattern(patternId: string): Promise<void> {
+    return this.db.collection('patterns').doc(patternId).delete();
+  }
+
 
 }

@@ -3,25 +3,25 @@
   <div *ngIf="showOverlay" class="conditions-container">
     <div *ngIf="showPattern" class="pattern-container">
       <div class="col-start-2 col-span-6 flex p-3">
-        <div class="flex flex-col gap-y-10 bg-[#4a9eda] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
+        <div class="flex flex-col gap-y-10 bg-[#6D9886] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
           <div class="flex flex-col w-full space-y-6">
             <div class="flex flex-row w-full">
-              <div class="flex justify-start w-full items-center font-gabarito text-light-1">
-                <h1 class="text-heading3-normal">PATTERNS</h1>
+              <div class="flex justify-start w-full items-center font-gabarito text-dark-1 text-heading3-normal">
+                <h1>PATTERNS</h1>
               </div>
               <button
-                class="bg-light-1 text-dark-1 rounded-full items-center py-1 px-4 cursor-pointer w-1/2"
+                class="base-button w-1/2"
                 (click)="addPattern()">
                 <span class="text-small-regular">new pattern</span>
               </button>
               <div class="flex flex-row justify-end w-full gap-x-4 font-jetbrains">
                 <button
-                  class="bg-light-1 text-dark-1 rounded-full items-center py-1 px-4 cursor-pointer"
+                  class="base-button"
                   (click)="togglePattern()">
                   <span class="text-small-regular">close</span>
                 </button>
                 <button
-                  class="bg-light-1 text-dark-1 rounded-full items-center py-1 px-4 cursor-pointer"
+                  class="base-button"
                   (click)="togglePattern()">
                   <span class="text-small-regular">save</span>
                 </button>
@@ -29,7 +29,7 @@
             </div>
           </div>
           <div class="grid grid-cols-4 gap-x-3 gap-y-3 w-full self-start overflow-y-scroll max-h-[59vh]">
-            <div *ngFor="let pattern of patterns; let pIndex = index" class="relative w-full bg-light-1/80 rounded-2xl p-3 h-auto shadow shadow-primary/10">
+            <div *ngFor="let pattern of patterns; let pIndex = index" class="relative w-full bg-light-2 rounded-md p-3 h-auto shadow shadow-primary/10">
               <div *ngIf="editingPatternIndex !== pIndex">
                 <div class="uppercase text-heading4-medium">{{pattern.name}}</div>
               </div>
@@ -41,25 +41,23 @@
               <div *ngFor="let condition of pattern.conditions" class="pattern-condition">
                 {{condition.text}}
               </div>
-              <div class="absolute right-0 top-0 mr-1.5 mt-1.5 bg-white rounded-xl">
+              <div class="absolute right-0 top-0 mt-1 mr-1 bg-none rounded-sm space-x-1 space-y-1 px-1">
                 <button
-                  class="bg-light-1/80 rounded-xl transition-colors ease-in-out items-center py-2 px-2 cursor-pointer font-gabarito hover:bg-dark-1"
+                  class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
                   (click)="togglePatternConditions(pIndex)">
                   <img src="assets/{{appliedPatterns.includes(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
                        alt="toggle visibility" class="w-4 h-4">
                 </button>
                 <button
-                  class="bg-light-1/80 rounded-xl transition-colors ease-in-out items-center py-2 px-2 cursor-pointer font-gabarito hover:bg-dark-1"
+                  class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1">
+                  <img src="assets/tune.svg" alt="delete" class="w-4 h-4">
+                </button>
+                <button
+                  class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
                   (click)="deletePattern(pIndex)">
                   <img src="assets/delete.svg" alt="delete" class="w-4 h-4">
                 </button>
               </div>
-<!--              TODO: implement better layout for button, possible extra modal window-->
-<!--              <button-->
-<!--                class="bg-light-1 w-full rounded-2xl items-center self-center py-0.5 px-2 cursor-pointer"-->
-<!--                (click)="startEditingPattern(pIndex)">-->
-<!--                <span class="text-small-regular">edit</span>-->
-<!--              </button>-->
             </div>
           </div>
         </div>
@@ -73,7 +71,7 @@
               <h1>CONDITIONS</h1>
             </div>
               <button
-                class="base-button w-1/2 text-small-regular justify-center font-jetbrains"
+                class="base-button w-1/2"
                 (click)="togglePattern()">
                 <span class="text-small-regular">patterns</span>
               </button>
@@ -94,20 +92,20 @@
               </button>
             </div>
           </div>
-          <div class="flex flex-col gap-y-3 px-5 w-full">
+          <div class="flex flex-col gap-y-3 px-5 w-full font-gabarito">
             <div *ngFor="let condition of conditions; let i = index" class="conditions-list">
               <button
-                class="bg-dark-1 text-light-1 rounded-l-full items-center py-1 px-3 cursor-pointer font-gabarito"
+                class="conditions-list-button rounded-l-full"
                 (click)="toggleVisibility(i)">
                 <img src="assets/{{condition.visible ? 'visibility.svg' : 'visibility_off.svg'}}"
                      alt="toggle visibility" class="w-6 h-6">
               </button>
               <div
-                class="w-full px-3 py-1 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 text-light-1 h-8">
+                class="conditions-list-label">
                 {{ condition.text }}
               </div>
               <button
-                class="bg-dark-1 text-light-1 rounded-r-full items-center py-1 px-3 cursor-pointer font-gabarito"
+                class="conditions-list-button rounded-r-full"
                 (click)="deleteCondition(i)">
                 <img src="assets/delete.svg" alt="delete" class="w-6 h-6">
               </button>
@@ -151,21 +149,17 @@
         class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center py-2 px-3">
         <div class="col-span-1 items-start">
           <div class="flex flex-row gap-x-2.5">
-            <a [routerLink]="['/dashboard']"
-               class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            <button class="base-button" [routerLink]="['/dashboard']">
               <span class="text-small-regular">close</span>
-            </a>
-            <a
-              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            </button>
+            <button class="base-button">
               <span class="text-small-regular">download</span>
-            </a>
+            </button>
           </div>
         </div>
         <div class="col-span-1 items-end">
           <div class="flex flex-row justify-end">
-            <button
-              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40"
-              (click)="toggleOverlay()">
+            <button class="base-button" (click)="toggleOverlay()">
               <span class="text-small-regular">edit</span>
             </button>
           </div>
@@ -182,16 +176,18 @@
         class="grid grid-cols-2 font-jetbrains font-semibold w-full bg-none text-light-1 rounded-full text-center items-center py-2 px-3">
         <div class="col-span-1 items-start">
           <div class="flex flex-row">
-            <a
-              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+            <button
+              class="base-button"
+              (click)="toggleOverlay()">
               <span class="text-small-regular">stop analyzing</span>
-            </a>
+            </button>
           </div>
         </div>
         <div class="col-span-1 items-end">
           <div class="flex flex-row justify-end">
             <button
-              class="bg-dark-1 rounded-full items-center self-center py-1 px-4 cursor-pointer shadow shadow-secondary/40">
+              class="base-button"
+              (click)="toggleOverlay()">
               <span class="text-small-regular">launch</span>
             </button>
           </div>

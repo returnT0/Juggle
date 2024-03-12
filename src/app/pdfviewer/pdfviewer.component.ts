@@ -11,8 +11,8 @@ import { Subscription } from 'rxjs';
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc: string = '';
   conditions: { text: string; visible: boolean }[] = [];
-  showOverlay = false;
-  showPattern = false;
+  showOverlay = true;
+  showPattern = true;
   patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [
     {
       name: 'pattern_1',

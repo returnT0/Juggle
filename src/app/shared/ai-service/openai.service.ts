@@ -11,20 +11,15 @@ export class OpenaiService {
   constructor(private http: HttpClient) { }
 
   generateText(messages: Array<{role: string, content: string}>) {
-    const url = `${this.baseUrl}/chat/completions`;
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${environment.openai_api_key}`
-    });
-
+    const url = `/api/openai`; // Updated to use the proxy endpoint
     const body = {
-      model: "gpt-3.5-turbo", // Adjusted for chat
-      messages: messages, // Adjusted for chat
+      model: "gpt-3.5-turbo",
+      messages: messages,
       temperature: 0.7,
       max_tokens: 150
     };
 
-    return this.http.post<OpenAIChatResponse>(url, body, { headers });
+    return this.http.post<OpenAIChatResponse>(url, body);
   }
 }
 

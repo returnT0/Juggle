@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {Router} from "@angular/router";
-import {OpenaiService} from "../shared/services/openai.service";
+import {OpenaiService} from "../shared/ai-service/openai.service";
 
 @Component({
   selector: 'app-not-found',
