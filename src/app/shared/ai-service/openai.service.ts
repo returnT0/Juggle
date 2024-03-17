@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "../../../environments/environment";
+import {Observable} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -8,10 +9,11 @@ import { environment } from "../../../environments/environment";
 export class OpenaiService {
   private baseUrl = 'https://api.openai.com/v1';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+  }
 
-  generateText(messages: Array<{role: string, content: string}>) {
-    const url = `/api/openai`; // Updated to use the proxy endpoint
+  generateText(messages: Array<{ role: string, content: string }>) {
+    const url = `/api/openai`;
     const body = {
       model: "gpt-3.5-turbo",
       messages: messages,
@@ -21,6 +23,21 @@ export class OpenaiService {
 
     return this.http.post<OpenAIChatResponse>(url, body);
   }
+
+  uploadAndAnalyzePdf(file: File): Observable<OpenAIChatResponse> {
+    const formData: FormData = new FormData();
+    formData.append('pdfFile', file, file.name);
+    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf', formData);
+  }
+
+  analyzePdfByUrl(pdfUrl: string): Observable<any> { // Use an appropriate type instead of any
+    return this.http.post('/api/analyze-pdf-from-url', { pdfUrl });
+  }
+}
+
+interface OpenAIChatMessage {
+  role: string;
+  content: string;
 }
 
 interface OpenAIChatResponse {
@@ -29,9 +46,10 @@ interface OpenAIChatResponse {
   created: number;
   model: string;
   choices: Array<{
-    message: {
-      content: string,
-      role: string
-    }
+    message: OpenAIChatMessage;
+    index: number;
   }>;
 }
+
+
+
