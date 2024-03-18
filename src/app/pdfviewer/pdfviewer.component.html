@@ -167,9 +167,11 @@
       </div>
       <div class="w-full h-full p-4">
         <div class="flex flex-col gap-y-4">
-            <textarea disabled
-                      class="w-full h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
-                      placeholder="Current pdf file has information about..."></textarea>
+            <div disabled
+                      class="w-fit h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
+                      placeholder="Current pdf file has information about...">
+              {{analysisResponse }}
+            </div>
         </div>
       </div>
       <div
@@ -187,7 +189,7 @@
           <div class="flex flex-row justify-end">
             <button
               class="base-button"
-              (click)="toggleOverlay()">
+              (click)="analyzePdf(cleanedFileName)">
               <span class="text-small-regular">launch</span>
             </button>
           </div>

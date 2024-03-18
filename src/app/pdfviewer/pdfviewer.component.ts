@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { UploadService } from '../shared/upload.service';
 import { Subscription } from 'rxjs';
+import {OpenaiService} from "../shared/ai-service/openai.service";
 
 @Component({
   selector: 'app-pdfviewer',
@@ -10,70 +11,31 @@ import { Subscription } from 'rxjs';
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc: string = '';
+  cleanedFileName: string = '';
+  analysisResponse: string = '';
   conditions: { text: string; visible: boolean }[] = [];
-  showOverlay = true;
-  showPattern = true;
-  patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [
-    {
-      name: 'pattern_1',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 2', visible: false },
-      ],
-    },
-    {
-      name: 'pattern_2',
-      conditions: [
-        { text: 'Condition 3', visible: true },
-        { text: 'Condition 4', visible: true },
-      ],
-    },
-    {
-      name: 'pattern_3',
-      conditions: [
-        { text: 'Condition 5', visible: true },
-        { text: 'Condition 6', visible: false },
-      ],
-    },
-    {
-      name: 'pattern_4',
-      conditions: [
-        { text: 'Condition 2', visible: true },
-        { text: 'Condition 4', visible: false },
-      ],
-    },
-    {
-      name: 'pattern_5',
-      conditions: [
-        { text: 'Condition 1', visible: true },
-        { text: 'Condition 7', visible: false },
-      ],
-    },
-  ];
+  showOverlay = false;
+  showPattern = false;
+  patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [];
   appliedPatterns: number[] = [];
   editingPatternIndex: number | null = null;
   savedConditions: string[] = [];
   selectedCondition: string = 'makeYourOwn';
   newConditionValue: string = '';
   secondaryOptions: { [key: string]: string[] } = {
-    textPatternExtraction: [
-      'Extract email addresses',
-      'Extract phone numbers',
-      'Extract data',
-      'Detect and Extract Financial Data',
-    ],
-    extractStructuredData: [
-      'Extract data from form fields',
-      'Extract list items (bullets/numbers)',
-      'Extract highlighted or annotated text',
-    ],
+    textPatternExtraction: [],
+    extractStructuredData: [],
     Saved: this.savedConditions,
   };
   secondarySelection: string = '';
 
   private routeSub: Subscription | undefined;
 
-  constructor(private route: ActivatedRoute, private uploadService: UploadService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private uploadService: UploadService,
+    private pdfAnalysisService: OpenaiService
+  ) {}
 
   ngOnInit(): void {
     this.routeSub = this.route.params.subscribe((params) => {
@@ -91,9 +53,45 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       .getPDFUrlById(pdfId)
       .then((url) => {
         this.pdfSrc = url;
+        this.cleanedFileName = this.extractFileNameFromUrl(url); // Store the cleaned file name
       })
       .catch((error) => console.error(error));
   }
+
+
+
+
+  private extractFileNameFromUrl(url: string): string {
+    const fileName = url.substring(url.lastIndexOf('/') + 1);
+    const queryParamIndex = fileName.indexOf('?');
+    if (queryParamIndex !== -1) {
+      // Remove query parameters if present
+      return fileName.substring(0, queryParamIndex);
+    }
+    return fileName;
+  }
+
+
+  analyzePdf(fileName: string): void {
+    this.pdfAnalysisService.analyzePdfFromFirebase(fileName).subscribe({
+      next: (response) => {
+        // Assuming the response structure is consistent with the provided example,
+        // extract the content from the first choice's message.
+        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
+          this.analysisResponse = response.choices[0].message.content;
+        } else {
+          // Handle unexpected response structure
+          this.analysisResponse = 'Received unexpected response structure from the analysis service.';
+        }
+      },
+      error: (error) => {
+        console.error('Error analyzing PDF:', error);
+        this.analysisResponse = 'Error analyzing PDF: ' + error.message;
+      }
+    });
+  }
+
+
 
   toggleOverlay(): void {
     this.showOverlay = !this.showOverlay;
@@ -132,28 +130,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
-  applyPatternConditions(patternIndex: number): void {
-    const patternConditions = this.patterns[patternIndex].conditions;
-    patternConditions.forEach(pc => {
-      if (!this.conditions.some(c => c.text === pc.text)) {
-        this.conditions.push({ ...pc });
-      }
-    });
-  }
-
-  editPatternName(patternIndex: number, newName: string): void {
-    if (newName.trim().length === 0) {
-      alert('Pattern name cannot be empty.');
-      return;
-    }
-
-    this.patterns[patternIndex].name = newName;
-  }
-
-  startEditingPattern(patternIndex: number): void {
-    this.editingPatternIndex = patternIndex;
-  }
-
   savePatternChanges(patternIndex: number): void {
     this.editingPatternIndex = null;
   }
@@ -161,7 +137,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   cancelEditing(): void {
     this.editingPatternIndex = null;
   }
-
 
   togglePatternConditions(patternIndex: number): void {
     const patternConditions = this.patterns[patternIndex].conditions;

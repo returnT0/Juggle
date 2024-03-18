@@ -30,8 +30,8 @@ export class OpenaiService {
     return this.http.post<OpenAIChatResponse>('/api/analyze-pdf', formData);
   }
 
-  analyzePdfByUrl(pdfUrl: string): Observable<any> { // Use an appropriate type instead of any
-    return this.http.post('/api/analyze-pdf-from-url', { pdfUrl });
+  analyzePdfFromFirebase(pdfFileName: string): Observable<OpenAIChatResponse> {
+    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf-firebase', { pdfFileName });
   }
 }
 
