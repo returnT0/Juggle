@@ -4,13 +4,18 @@ import {lastValueFrom, Observable} from "rxjs";
 import {finalize} from 'rxjs/operators';
 import {PDFDocument} from 'pdf-lib';
 import {AngularFirestore} from "@angular/fire/compat/firestore";
+import {HttpClient} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
 export class UploadService {
 
-  constructor(private storage: AngularFireStorage, private db: AngularFirestore) {
+  constructor(
+    private storage: AngularFireStorage,
+    private db: AngularFirestore,
+    private http: HttpClient
+  ) {
   }
 
   async uploadFile(file: File | Blob, fileName: string): Promise<string> {
@@ -65,9 +70,13 @@ export class UploadService {
     });
   }
 
+  // fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
+  //   return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs');
+  // }
+
   async getPDFUrlById(pdfId: string): Promise<string> {
     try {
-      const fileRef = this.storage.ref(`pdfs/${pdfId}`);
+      const fileRef = this.storage.ref(`${pdfId}`);
       return await fileRef.getDownloadURL().toPromise();
     } catch (error) {
       console.error("Error fetching PDF URL by ID:", error);
@@ -75,9 +84,10 @@ export class UploadService {
     }
   }
 
-  async deleteFile(filePath: string): Promise<void> {
+  async deleteFile(fileUrl: string): Promise<void> {
     try {
-      const fileRef = this.storage.ref(filePath);
+      // Use refFromURL when you have a full URL to the file
+      const fileRef = this.storage.refFromURL(fileUrl);
       await fileRef.delete();
       console.log("File successfully deleted");
     } catch (error) {

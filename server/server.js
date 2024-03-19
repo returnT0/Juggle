@@ -55,6 +55,36 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
   }
 });
 
+app.get('/api/fetch-all-pdfs', async (req, res) => {
+  const pdfsPrefix = 'pdfs/'; // Note the trailing slash, which can be important for directory-like access
+
+  try {
+    const [files] = await bucket.getFiles({
+      prefix: pdfsPrefix,
+      delimiter: '/' // This helps simulate directory-like structure
+    });
+
+    const metadataPromises = files.map(file => file.getSignedUrl({
+      action: 'read',
+      expires: '2091-09-03T00:00:00Z' // Using an ISO 8601 format for clarity
+    }).then(url => ({
+      id: file.name,
+      url: url[0], // Assuming the first URL is what we want
+      path: `gs://juggle-f080c.appspot.com/${file.name}` // Constructing the full path
+    })));
+
+    const filesMetadata = await Promise.all(metadataPromises);
+    res.json(filesMetadata);
+  } catch (error) {
+    console.error("Error listing PDF files from Firebase Storage:", error.message);
+    res.status(500).json({
+      message: "Failed to list PDF files from Firebase Storage.",
+      error: error.message,
+    });
+  }
+});
+
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(angularAppPath, 'index.html'));
 });
