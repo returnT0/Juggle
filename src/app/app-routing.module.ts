@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {LandingComponent} from "./landing/landing.component";
-import {SignInComponent} from "./auth/sign-in/sign-in.component";
-import {SignUpComponent} from "./auth/sign-up/sign-up.component";
-import {NotFoundComponent} from "./not-found/not-found.component";
-import {DashboardComponent} from "./dashboard/dashboard.component";
+import {LandingComponent} from "./components/landing/landing.component";
+import {SignInComponent} from "./components/sign-in/sign-in.component";
+import {SignUpComponent} from "./components/sign-up/sign-up.component";
+import {NotFoundComponent} from "./components/not-found/not-found.component";
+import {DashboardComponent} from "./components/dashboard/dashboard.component";
 import {AuthGuard} from "./guards/auth.guard";
-import {ProfileComponent} from "./profile/profile.component";
-import {PdfviewerComponent} from "./pdfviewer/pdfviewer.component";
+import {ProfileComponent} from "./components/profile/profile.component";
+import {PdfviewerComponent} from "./components/pdfviewer/pdfviewer.component";
 
 const routes: Routes = [
   {path: '', redirectTo: '/landing', pathMatch: 'full'},

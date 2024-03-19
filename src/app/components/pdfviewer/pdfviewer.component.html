@@ -3,7 +3,8 @@
   <div *ngIf="showOverlay" class="conditions-container">
     <div *ngIf="showPattern" class="pattern-container">
       <div class="col-start-2 col-span-6 flex p-3">
-        <div class="flex flex-col gap-y-10 bg-[#6D9886] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
+        <div
+          class="flex flex-col gap-y-10 bg-[#6D9886] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
           <div class="flex flex-col w-full space-y-6">
             <div class="flex flex-row w-full">
               <div class="flex justify-start w-full items-center font-gabarito text-dark-1 text-heading3-normal">
@@ -29,9 +30,10 @@
             </div>
           </div>
           <div class="grid grid-cols-4 gap-x-3 gap-y-3 w-full self-start overflow-y-scroll max-h-[59vh]">
-            <div *ngFor="let pattern of patterns; let pIndex = index" class="relative w-full bg-light-2 rounded-md p-3 h-auto shadow shadow-primary/10">
+            <div *ngFor="let pattern of patterns; let pIndex = index"
+                 class="relative w-full bg-light-2 rounded-md p-3 h-auto shadow shadow-primary/10">
               <div *ngIf="editingPatternIndex !== pIndex">
-                <div class="uppercase text-heading4-medium">{{pattern.name}}</div>
+                <div class="uppercase text-heading4-medium">{{ pattern.name }}</div>
               </div>
               <div *ngIf="editingPatternIndex === pIndex">
                 <input [(ngModel)]="pattern.name" class="text-input-class" type="text">
@@ -39,7 +41,7 @@
                 <button (click)="cancelEditing()">Cancel</button>
               </div>
               <div *ngFor="let condition of pattern.conditions" class="pattern-condition">
-                {{condition.text}}
+                {{ condition.text }}
               </div>
               <div class="absolute right-0 top-0 mt-1 mr-1 bg-none rounded-sm space-x-1 space-y-1 px-1">
                 <button
@@ -50,12 +52,12 @@
                 </button>
                 <button
                   class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1">
-                  <img src="assets/tune.svg" alt="delete" class="w-4 h-4">
+                  <img src="../../../assets/tune.svg" alt="delete" class="w-4 h-4">
                 </button>
                 <button
                   class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
                   (click)="deletePattern(pIndex)">
-                  <img src="assets/delete.svg" alt="delete" class="w-4 h-4">
+                  <img src="../../../assets/delete.svg" alt="delete" class="w-4 h-4">
                 </button>
               </div>
             </div>
@@ -70,11 +72,11 @@
             <div class="conditions-header">
               <h1>CONDITIONS</h1>
             </div>
-              <button
-                class="base-button w-1/2"
-                (click)="togglePattern()">
-                <span class="text-small-regular">patterns</span>
-              </button>
+            <button
+              class="base-button w-1/2"
+              (click)="togglePattern()">
+              <span class="text-small-regular">patterns</span>
+            </button>
             <div class="right-side-buttons">
               <button *ngIf="conditions.length > 0" (click)="addPattern()"
                       class="base-button">
@@ -107,7 +109,7 @@
               <button
                 class="conditions-list-button rounded-r-full"
                 (click)="deleteCondition(i)">
-                <img src="assets/delete.svg" alt="delete" class="w-6 h-6">
+                <img src="../../../assets/delete.svg" alt="delete" class="w-6 h-6">
               </button>
             </div>
           </div>
@@ -167,11 +169,11 @@
       </div>
       <div class="w-full h-full p-4">
         <div class="flex flex-col gap-y-4">
-            <div disabled
-                      class="w-fit h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
-                      placeholder="Current pdf file has information about...">
-              {{analysisResponse }}
-            </div>
+          <div disabled
+               class="w-fit h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
+               placeholder="Current pdf file has information about...">
+            {{ analysisResponse }}
+          </div>
         </div>
       </div>
       <div

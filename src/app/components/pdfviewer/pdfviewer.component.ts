@@ -1,13 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { UploadService } from '../shared/upload.service';
-import { Subscription } from 'rxjs';
-import {OpenaiService} from "../shared/ai-service/openai.service";
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {UploadService} from '../../shared/upload-service/upload.service';
+import {Subscription} from 'rxjs';
+import {OpenaiService} from "../../shared/ai-service/openai.service";
 
 @Component({
-  selector: 'app-pdfviewer',
-  templateUrl: './pdfviewer.component.html',
-  styleUrls: ['./pdfviewer.component.css'],
+  selector: 'app-pdfviewer', templateUrl: './pdfviewer.component.html', styleUrls: ['./pdfviewer.component.css'],
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc: string = '';
@@ -23,19 +21,14 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   selectedCondition: string = 'makeYourOwn';
   newConditionValue: string = '';
   secondaryOptions: { [key: string]: string[] } = {
-    textPatternExtraction: [],
-    extractStructuredData: [],
-    Saved: this.savedConditions,
+    textPatternExtraction: [], extractStructuredData: [], Saved: this.savedConditions,
   };
   secondarySelection: string = '';
 
   private routeSub: Subscription | undefined;
 
-  constructor(
-    private route: ActivatedRoute,
-    private uploadService: UploadService,
-    private pdfAnalysisService: OpenaiService
-  ) {}
+  constructor(private route: ActivatedRoute, private uploadService: UploadService, private pdfAnalysisService: OpenaiService) {
+  }
 
   ngOnInit(): void {
     this.routeSub = this.route.params.subscribe((params) => {
@@ -48,50 +41,20 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.routeSub?.unsubscribe();
   }
 
-  private fetchPdfUrlById(pdfId: string): void {
-    this.uploadService
-      .getPDFUrlById(pdfId)
-      .then((url) => {
-        this.pdfSrc = url;
-        this.cleanedFileName = this.extractFileNameFromUrl(url); // Store the cleaned file name
-      })
-      .catch((error) => console.error(error));
-  }
-
-
-
-
-  private extractFileNameFromUrl(url: string): string {
-    const fileName = url.substring(url.lastIndexOf('/') + 1);
-    const queryParamIndex = fileName.indexOf('?');
-    if (queryParamIndex !== -1) {
-      // Remove query parameters if present
-      return fileName.substring(0, queryParamIndex);
-    }
-    return fileName;
-  }
-
-
   analyzePdf(fileName: string): void {
     this.pdfAnalysisService.analyzePdfFromFirebase(fileName).subscribe({
       next: (response) => {
-        // Assuming the response structure is consistent with the provided example,
-        // extract the content from the first choice's message.
         if (response.choices && response.choices.length > 0 && response.choices[0].message) {
           this.analysisResponse = response.choices[0].message.content;
         } else {
-          // Handle unexpected response structure
           this.analysisResponse = 'Received unexpected response structure from the analysis service.';
         }
-      },
-      error: (error) => {
+      }, error: (error) => {
         console.error('Error analyzing PDF:', error);
         this.analysisResponse = 'Error analyzing PDF: ' + error.message;
       }
     });
   }
-
-
 
   toggleOverlay(): void {
     this.showOverlay = !this.showOverlay;
@@ -110,7 +73,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     const conditionExists = this.conditions.some((condition) => condition.text === conditionValue);
 
     if (conditionValue && !conditionExists) {
-      this.conditions.push({ text: conditionValue, visible: true });
+      this.conditions.push({text: conditionValue, visible: true});
       if (this.selectedCondition === 'makeYourOwn') {
         this.newConditionValue = '';
       } else {
@@ -146,7 +109,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     } else {
       patternConditions.forEach(pc => {
         if (!this.conditions.some(c => c.text === pc.text)) {
-          this.conditions.push({ ...pc });
+          this.conditions.push({...pc});
         }
       });
       this.appliedPatterns.push(patternIndex);
@@ -161,14 +124,10 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   addPattern(): void {
     const patternName = `pattern_${this.patterns.length + 1}`;
     const newPattern = {
-      name: patternName,
-      conditions: [...this.conditions],
+      name: patternName, conditions: [...this.conditions],
     };
 
-    const isDuplicate = this.patterns.some(pattern =>
-      pattern.conditions.length === newPattern.conditions.length &&
-      pattern.conditions.every(pc => newPattern.conditions.some(nc => nc.text === pc.text))
-    );
+    const isDuplicate = this.patterns.some(pattern => pattern.conditions.length === newPattern.conditions.length && pattern.conditions.every(pc => newPattern.conditions.some(nc => nc.text === pc.text)));
 
     if (!isDuplicate) {
       this.patterns.push(newPattern);
@@ -188,5 +147,25 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   onPrimarySelectionChange(value: string): void {
     this.selectedCondition = value;
     this.secondarySelection = '';
+  }
+
+  private fetchPdfUrlById(pdfId: string): void {
+    this.uploadService
+      .getPDFUrlById(pdfId)
+      .then((url) => {
+        this.pdfSrc = url;
+        this.cleanedFileName = this.extractFileNameFromUrl(url); // Store the cleaned file name
+      })
+      .catch((error) => console.error(error));
+  }
+
+  private extractFileNameFromUrl(url: string): string {
+    const fileName = url.substring(url.lastIndexOf('/') + 1);
+    const queryParamIndex = fileName.indexOf('?');
+    if (queryParamIndex !== -1) {
+      // Remove query parameters if present
+      return fileName.substring(0, queryParamIndex);
+    }
+    return fileName;
   }
 }
