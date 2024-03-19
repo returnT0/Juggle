@@ -56,21 +56,21 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
 });
 
 app.get('/api/fetch-all-pdfs', async (req, res) => {
-  const pdfsPrefix = 'pdfs/'; // Note the trailing slash, which can be important for directory-like access
+  const pdfsPrefix = 'pdfs/';
 
   try {
     const [files] = await bucket.getFiles({
       prefix: pdfsPrefix,
-      delimiter: '/' // This helps simulate directory-like structure
+      delimiter: '/'
     });
 
     const metadataPromises = files.map(file => file.getSignedUrl({
       action: 'read',
-      expires: '2091-09-03T00:00:00Z' // Using an ISO 8601 format for clarity
+      expires: '2091-09-03T00:00:00Z'
     }).then(url => ({
       id: file.name,
-      url: url[0], // Assuming the first URL is what we want
-      path: `gs://juggle-f080c.appspot.com/${file.name}` // Constructing the full path
+      url: url[0],
+      path: `gs://juggle-f080c.appspot.com/${file.name}`
     })));
 
     const filesMetadata = await Promise.all(metadataPromises);
