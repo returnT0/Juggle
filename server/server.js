@@ -6,7 +6,8 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
 const serviceAccount = require('../juggle-f080c-firebase-adminsdk-x9k6r-578d81b3fb.json');
-
+const multer = require('multer');
+const {PDFDocument} = require('pdf-lib');
 const app = express();
 const port = 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -97,6 +98,76 @@ app.delete('/api/delete-pdf', async (req, res) => {
     res.status(500).json({
       message: "Failed to delete PDF from Firebase Storage.", error: error.message,
     });
+  }
+});
+
+app.post('/api/upload-file', multer().single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const fileName = `pdfs/${new Date().getTime()}_${req.file.originalname}`;
+  const file = bucket.file(fileName);
+
+  try {
+    await file.save(req.file.buffer);
+    const [url] = await file.getSignedUrl({
+      action: 'read', expires: '03-09-2491'
+    });
+    console.log(`Download URL: ${url}`);
+    res.send({url});
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    res.status(500).send('Failed to upload file.');
+  }
+});
+
+app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).send('No PDF files uploaded.');
+  }
+
+  try {
+    const mergedPdf = await PDFDocument.create();
+
+    for (const file of req.files) {
+      const pdfDoc = await PDFDocument.load(file.buffer);
+      const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      copiedPages.forEach(page => mergedPdf.addPage(page));
+    }
+
+    const mergedPdfBytes = await mergedPdf.save();
+    const fileName = `pdfs/${new Date().getTime()}_merged.pdf`;
+    new Blob([mergedPdfBytes], {type: 'application/pdf'});
+    const {Readable} = require('stream');
+    const readableInstanceStream = new Readable({
+      read() {
+        this.push(mergedPdfBytes);
+        this.push(null);
+      }
+    });
+
+    const file = bucket.file(fileName);
+    readableInstanceStream.pipe(file.createWriteStream({
+      metadata: {
+        contentType: 'application/pdf'
+      }
+    }))
+      .on('finish', async () => {
+        // File uploaded successfully
+        const [url] = await file.getSignedUrl({
+          action: 'read', expires: '03-09-2491'
+        });
+        res.send({url});
+      })
+      .on('error', (error) => {
+        console.error("Error uploading merged PDF:", error);
+        res.status(500).send('Failed to upload merged PDF.');
+      });
+
+  } catch (error) {
+    console.error("Error merging PDFs:", error);
+    res.status(500).send('Failed to merge PDF files.');
   }
 });
 
