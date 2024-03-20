@@ -165,10 +165,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   viewPdf(pdfId: string): void {
+    // Encode the pdfId
+    const encodedPdfId = btoa(pdfId);
+
+    // Create a URL tree with the encoded pdfId
     const url = this.router.serializeUrl(
-      this.router.createUrlTree(['/view-pdf', pdfId])
+      this.router.createUrlTree(['/view-pdf', encodedPdfId])
     );
 
+    // Open the URL in a new tab
     window.open(url, '_blank');
   }
 
