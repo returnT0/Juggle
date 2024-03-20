@@ -21,6 +21,7 @@ app.use(bodyParser.json());
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount), storageBucket: "juggle-f080c.appspot.com"
 });
+
 const bucket = admin.storage().bucket();
 const firestore = admin.firestore();
 const conditionsCollection = firestore.collection('conditions');
