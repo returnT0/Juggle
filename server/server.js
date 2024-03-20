@@ -55,6 +55,31 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
   }
 });
 
+app.get('/api/fetch-all-pdfs', async (req, res) => {
+   // Assuming 'bucket' is your Firebase Storage reference
+  try {
+    const [files] = await bucket.getFiles(); // Fetch all files in the bucket
+    const metadataPromises = files.map(file =>
+      file.getSignedUrl({ action: 'read', expires: '03-09-2491' })
+        .then(url => ({
+          id: file.name,
+          url,
+          path: file.metadata.selfLink // or any other path identifier you need
+        }))
+    );
+
+    const filesMetadata = await Promise.all(metadataPromises);
+    res.json(filesMetadata);
+  } catch (error) {
+    console.error("Error fetching PDF metadata:", error);
+    res.status(500).json({
+      message: "Failed to fetch PDF metadata from Firebase Storage.",
+      error: error.message,
+    });
+  }
+});
+
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(angularAppPath, 'index.html'));
 });

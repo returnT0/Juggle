@@ -4,13 +4,18 @@ import {lastValueFrom, Observable} from "rxjs";
 import {finalize} from 'rxjs/operators';
 import {PDFDocument} from 'pdf-lib';
 import {AngularFirestore} from "@angular/fire/compat/firestore";
+import {HttpClient} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
 export class UploadService {
 
-  constructor(private storage: AngularFireStorage, private db: AngularFirestore) {
+  constructor(
+    private storage: AngularFireStorage,
+    private db: AngularFirestore,
+    private http: HttpClient
+  ) {
   }
 
   async uploadFile(file: File | Blob, fileName: string): Promise<string> {
@@ -48,26 +53,30 @@ export class UploadService {
     await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
   }
 
+  // fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
+  //   const ref = this.storage.storage.ref('pdfs');
+  //   return new Observable((observer) => {
+  //     ref.listAll().then(result => {
+  //       const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
+  //         id: item.name,
+  //         url,
+  //         path: item.fullPath
+  //       })));
+  //       Promise.all(metadataPromises).then(files => {
+  //         observer.next(files);
+  //         observer.complete();
+  //       }).catch(error => observer.error(error));
+  //     }).catch(error => observer.error(error));
+  //   });
+  // }
+
   fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
-    const ref = this.storage.storage.ref('pdfs');
-    return new Observable((observer) => {
-      ref.listAll().then(result => {
-        const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
-          id: item.name,
-          url,
-          path: item.fullPath
-        })));
-        Promise.all(metadataPromises).then(files => {
-          observer.next(files);
-          observer.complete();
-        }).catch(error => observer.error(error));
-      }).catch(error => observer.error(error));
-    });
+    return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs');
   }
 
   async getPDFUrlById(pdfId: string): Promise<string> {
     try {
-      const fileRef = this.storage.ref(`pdfs/${pdfId}`);
+      const fileRef = this.storage.ref(`${pdfId}`);
       return await fileRef.getDownloadURL().toPromise();
     } catch (error) {
       console.error("Error fetching PDF URL by ID:", error);

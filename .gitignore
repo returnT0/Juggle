@@ -14,7 +14,6 @@ yarn-error.log
 # Envs
 *.env
 .env
-server/.env
 
 # IDEs and editors
 .idea/
@@ -45,3 +44,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+/server/temp/
+/server/node_modules/
+/juggle-f080c-firebase-adminsdk-x9k6r-578d81b3fb.json
