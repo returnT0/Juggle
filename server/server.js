@@ -12,14 +12,80 @@ const app = express();
 const port = 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
 
-app.use(express.static(angularAppPath));
+app.use(express.static(angularAppPath));``
 app.use(bodyParser.json());
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount), storageBucket: "juggle-f080c.appspot.com"
 });
 const bucket = admin.storage().bucket();
+const db = admin.firestore();
+const conditionsCollection = db.collection('conditions');
+const patternsCollection = db.collection('patterns');
+
+
+app.get('/api/fetch-pattern/:patternId', async (req, res) => {
+  const { patternId } = req.params;
+
+  try {
+    const patternDoc = await patternsCollection.doc(patternId).get();
+
+    if (!patternDoc.exists) {
+      return res.status(404).send({ message: 'Pattern not found.' });
+    }
+
+    const patternData = patternDoc.data();
+
+    const conditionPromises = patternData.conditionIds.map(conditionId =>
+      conditionsCollection.doc(conditionId).get()
+    );
+
+    const conditionDocs = await Promise.all(conditionPromises);
+    const conditions = conditionDocs.map(doc => {
+      if (!doc.exists) {
+        console.log(`Condition ${doc.id} not found`);
+        return { id: doc.id, text: 'Condition not found or has been removed' };
+      }
+      return { id: doc.id, ...doc.data() };
+    });
+
+    res.json({
+      id: patternDoc.id,
+      name: patternData.name,
+      conditions
+    });
+  } catch (error) {
+    console.error("Error fetching pattern:", error);
+    res.status(500).send({ message: "Failed to fetch pattern.", error: error.message });
+  }
+});
+
+app.post('/api/create-pattern', async (req, res) => {
+  const { name, conditionIds } = req.body;
+
+  if (!name || !conditionIds || !Array.isArray(conditionIds) || conditionIds.length === 0) {
+    return res.status(400).send({ message: 'Pattern name and a non-empty array of condition IDs are required.' });
+  }
+
+  try {
+    const patternRef = await patternsCollection.add({
+      name,
+      conditionIds
+    });
+
+    const newPatternDoc = await patternRef.get();
+    res.status(201).send({
+      id: newPatternDoc.id,
+      ...newPatternDoc.data()
+    });
+  } catch (error) {
+    console.error("Error creating new pattern:", error);
+    res.status(500).send({ message: "Failed to create a new pattern.", error: error.message });
+  }
+});
 
 app.post('/api/analyze-pdf-firebase', async (req, res) => {
   let {pdfFileName} = req.body;
@@ -53,6 +119,44 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
       message: "Failed to retrieve or analyze PDF from Firebase Storage.",
       error: error.response ? error.response.data : error.message,
     });
+  }
+});
+
+app.get('/api/fetch-all-conditions', async (req, res) => {
+  try {
+    const conditionsSnapshot = await conditionsCollection.get();
+    const conditions = [];
+
+    conditionsSnapshot.forEach(doc => {
+      conditions.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.json(conditions);
+  } catch (error) {
+    console.error("Error fetching conditions:", error);
+    res.status(500).send({ message: "Failed to fetch conditions.", error: error.message });
+  }
+});
+
+app.post('/api/create-condition', async (req, res) => {
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).send({ message: 'Condition text is required.' });
+  }
+
+  try {
+    const docRef = await conditionsCollection.add({ text });
+
+    const newDoc = await docRef.get();
+
+    res.status(201).send({ id: newDoc.id, text: newDoc.data().text });
+  } catch (error) {
+    console.error("Error creating new condition:", error);
+    res.status(500).send({ message: "Failed to create a new condition.", error: error.message });
   }
 });
 
