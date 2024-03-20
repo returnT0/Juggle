@@ -44,6 +44,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
-/juggle-f080c-firebase-adminsdk-x9k6r-578d81b3fb.json
-/server/.env
 /server/temp/
+/server/node_modules/
+/juggle-f080c-firebase-adminsdk-x9k6r-578d81b3fb.json

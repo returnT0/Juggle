@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AngularFireStorage} from "@angular/fire/compat/storage";
-import {lastValueFrom, Observable} from "rxjs";
+import {catchError, lastValueFrom, Observable, throwError} from "rxjs";
 import {finalize} from 'rxjs/operators';
 import {PDFDocument} from 'pdf-lib';
 import {AngularFirestore} from "@angular/fire/compat/firestore";
@@ -18,61 +18,86 @@ export class UploadService {
   ) {
   }
 
+  // async uploadFile(file: File | Blob, fileName: string): Promise<string> {
+  //   const filePath = `pdfs/${new Date().getTime()}_${fileName}`;
+  //   const fileRef = this.storage.ref(filePath);
+  //   const task = this.storage.upload(filePath, file);
+  //
+  //   await lastValueFrom(task.percentageChanges()); // Wait for upload to complete
+  //
+  //   return new Promise((resolve, reject) => {
+  //     task.snapshotChanges().pipe(finalize(async () => {
+  //       const url = await fileRef.getDownloadURL().toPromise();
+  //       console.log(`Download URL: ${url}`);
+  //       resolve(url);
+  //     })).subscribe();
+  //   });
+  // }
+
   async uploadFile(file: File | Blob, fileName: string): Promise<string> {
-    const filePath = `pdfs/${new Date().getTime()}_${fileName}`;
-    const fileRef = this.storage.ref(filePath);
-    const task = this.storage.upload(filePath, file);
+    const formData = new FormData();
+    formData.append('file', file, fileName);
 
-    await lastValueFrom(task.percentageChanges()); // Wait for upload to complete
-
-    return new Promise((resolve, reject) => {
-      task.snapshotChanges().pipe(finalize(async () => {
-        const url = await fileRef.getDownloadURL().toPromise();
-        console.log(`Download URL: ${url}`);
-        resolve(url);
-      })).subscribe();
-    });
-  }
-
-  async mergePDFFiles(files: File[]): Promise<Uint8Array> {
-    const mergedPdf = await PDFDocument.create();
-
-    for (const file of files) {
-      const fileArrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(fileArrayBuffer);
-      const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
-      copiedPages.forEach(page => mergedPdf.addPage(page));
-    }
-
-    return mergedPdf.save();
+    return this.http.post<{ url: string }>('/api/upload-file', formData)
+      .pipe(
+        catchError(error => throwError(() => new Error(`Failed to upload file: ${error.message}`)))
+      )
+      .toPromise()
+      .then(response => {
+        if (!response || !response.url) {
+          throw new Error('Upload did not return a valid URL.');
+        }
+        return response.url;
+      });
   }
 
   async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
-    const mergedPdfFile = await this.mergePDFFiles(files);
-    const fileBlob = new Blob([mergedPdfFile], {type: 'application/pdf'});
-    await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    formData.append('fileName', fileName);
+
+    await this.http.post('/api/merge-upload-pdfs', formData).toPromise();
   }
 
-  fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
-    const ref = this.storage.storage.ref('pdfs');
-    return new Observable((observer) => {
-      ref.listAll().then(result => {
-        const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
-          id: item.name,
-          url,
-          path: item.fullPath
-        })));
-        Promise.all(metadataPromises).then(files => {
-          observer.next(files);
-          observer.complete();
-        }).catch(error => observer.error(error));
-      }).catch(error => observer.error(error));
-    });
-  }
+  // async mergePDFFiles(files: File[]): Promise<Uint8Array> {
+  //   const mergedPdf = await PDFDocument.create();
+  //
+  //   for (const file of files) {
+  //     const fileArrayBuffer = await file.arrayBuffer();
+  //     const pdfDoc = await PDFDocument.load(fileArrayBuffer);
+  //     const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+  //     copiedPages.forEach(page => mergedPdf.addPage(page));
+  //   }
+  //
+  //   return mergedPdf.save();
+  // }
+
+  // async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
+  //   const mergedPdfFile = await this.mergePDFFiles(files);
+  //   const fileBlob = new Blob([mergedPdfFile], {type: 'application/pdf'});
+  //   await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
+  // }
 
   // fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
-  //   return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs');
+  //   const ref = this.storage.storage.ref('pdfs');
+  //   return new Observable((observer) => {
+  //     ref.listAll().then(result => {
+  //       const metadataPromises = result.items.map(item => item.getDownloadURL().then(url => ({
+  //         id: item.name,
+  //         url,
+  //         path: item.fullPath
+  //       })));
+  //       Promise.all(metadataPromises).then(files => {
+  //         observer.next(files);
+  //         observer.complete();
+  //       }).catch(error => observer.error(error));
+  //     }).catch(error => observer.error(error));
+  //   });
   // }
+
+  fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
+    return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs');
+  }
 
   async getPDFUrlById(pdfId: string): Promise<string> {
     try {
@@ -84,11 +109,9 @@ export class UploadService {
     }
   }
 
-  async deleteFile(fileUrl: string): Promise<void> {
+  async deleteFile(filePath: string): Promise<void> {
     try {
-      // Use refFromURL when you have a full URL to the file
-      const fileRef = this.storage.refFromURL(fileUrl);
-      await fileRef.delete();
+      await this.http.delete('/api/delete-pdf', { body: { filePath } }).toPromise();
       console.log("File successfully deleted");
     } catch (error) {
       console.error("Error while deleting file:", error);

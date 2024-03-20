@@ -25,14 +25,15 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   };
   secondarySelection: string = '';
 
-  private routeSub: Subscription | undefined;
+  private routeSub!: Subscription;
 
   constructor(private route: ActivatedRoute, private uploadService: UploadService, private pdfAnalysisService: OpenaiService) {
   }
 
   ngOnInit(): void {
     this.routeSub = this.route.params.subscribe((params) => {
-      const pdfId = params['id'];
+      const encodedPdfId = params['id'];
+      const pdfId = atob(encodedPdfId);
       this.fetchPdfUrlById(pdfId);
     });
   }
