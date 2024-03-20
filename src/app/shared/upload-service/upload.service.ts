@@ -86,8 +86,7 @@ export class UploadService {
 
   async deleteFile(filePath: string): Promise<void> {
     try {
-      const fileRef = this.storage.ref(filePath);
-      await fileRef.delete();
+      await this.http.delete('/api/delete-pdf', { body: { filePath } }).toPromise();
       console.log("File successfully deleted");
     } catch (error) {
       console.error("Error while deleting file:", error);

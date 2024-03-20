@@ -60,7 +60,7 @@ app.get('/api/fetch-all-pdfs', async (req, res) => {
   try {
     const [files] = await bucket.getFiles(); // Fetch all files in the bucket
     const metadataPromises = files.map(file =>
-      file.getSignedUrl({ action: 'read', expires: '03-09-2491' })
+      file.getSignedUrl({ action: 'read', expires: '03-09-2100' })
         .then(url => ({
           id: file.name,
           url,
@@ -79,6 +79,32 @@ app.get('/api/fetch-all-pdfs', async (req, res) => {
   }
 });
 
+app.delete('/api/delete-pdf', async (req, res) => {
+  let { filePath } = req.body;
+
+  if (filePath && filePath.includes('https://')) {
+    const matches = filePath.match(/o\/(.+?)$/);
+    if (matches && matches[1]) {
+      filePath = decodeURIComponent(matches[1]);
+    }
+  }
+
+  if (!filePath) {
+    return res.status(400).send('Valid file path not provided.');
+  }
+
+  try {
+    const file = bucket.file(filePath);
+    await file.delete();
+    res.send({ message: "File successfully deleted" });
+  } catch (error) {
+    console.error("Error while deleting file:", error);
+    res.status(500).json({
+      message: "Failed to delete PDF from Firebase Storage.",
+      error: error.message,
+    });
+  }
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(angularAppPath, 'index.html'));
