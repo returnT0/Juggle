@@ -56,31 +56,26 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
 });
 
 app.get('/api/fetch-all-pdfs', async (req, res) => {
-   // Assuming 'bucket' is your Firebase Storage reference
+
   try {
-    const [files] = await bucket.getFiles(); // Fetch all files in the bucket
-    const metadataPromises = files.map(file =>
-      file.getSignedUrl({ action: 'read', expires: '03-09-2100' })
-        .then(url => ({
-          id: file.name,
-          url,
-          path: file.metadata.selfLink // or any other path identifier you need
-        }))
-    );
+    const [files] = await bucket.getFiles();
+    const metadataPromises = files.map(file => file.getSignedUrl({action: 'read', expires: '03-09-2100'})
+      .then(url => ({
+        id: file.name, url, path: file.metadata.selfLink
+      })));
 
     const filesMetadata = await Promise.all(metadataPromises);
     res.json(filesMetadata);
   } catch (error) {
     console.error("Error fetching PDF metadata:", error);
     res.status(500).json({
-      message: "Failed to fetch PDF metadata from Firebase Storage.",
-      error: error.message,
+      message: "Failed to fetch PDF metadata from Firebase Storage.", error: error.message,
     });
   }
 });
 
 app.delete('/api/delete-pdf', async (req, res) => {
-  let { filePath } = req.body;
+  let {filePath} = req.body;
 
   if (filePath && filePath.includes('https://')) {
     const matches = filePath.match(/o\/(.+?)$/);
@@ -96,12 +91,11 @@ app.delete('/api/delete-pdf', async (req, res) => {
   try {
     const file = bucket.file(filePath);
     await file.delete();
-    res.send({ message: "File successfully deleted" });
+    res.send({message: "File successfully deleted"});
   } catch (error) {
     console.error("Error while deleting file:", error);
     res.status(500).json({
-      message: "Failed to delete PDF from Firebase Storage.",
-      error: error.message,
+      message: "Failed to delete PDF from Firebase Storage.", error: error.message,
     });
   }
 });
