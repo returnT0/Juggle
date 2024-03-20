@@ -51,32 +51,32 @@ export class UploadService {
       });
   }
 
-  async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    formData.append('fileName', fileName);
+  // async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
+  //   const formData = new FormData();
+  //   files.forEach(file => formData.append('files', file));
+  //   formData.append('fileName', fileName);
+  //
+  //   await this.http.post('/api/merge-upload-pdfs', formData).toPromise();
+  // }
 
-    await this.http.post('/api/merge-upload-pdfs', formData).toPromise();
+  async mergePDFFiles(files: File[]): Promise<Uint8Array> {
+    const mergedPdf = await PDFDocument.create();
+
+    for (const file of files) {
+      const fileArrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(fileArrayBuffer);
+      const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      copiedPages.forEach(page => mergedPdf.addPage(page));
+    }
+
+    return mergedPdf.save();
   }
 
-  // async mergePDFFiles(files: File[]): Promise<Uint8Array> {
-  //   const mergedPdf = await PDFDocument.create();
-  //
-  //   for (const file of files) {
-  //     const fileArrayBuffer = await file.arrayBuffer();
-  //     const pdfDoc = await PDFDocument.load(fileArrayBuffer);
-  //     const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
-  //     copiedPages.forEach(page => mergedPdf.addPage(page));
-  //   }
-  //
-  //   return mergedPdf.save();
-  // }
-
-  // async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
-  //   const mergedPdfFile = await this.mergePDFFiles(files);
-  //   const fileBlob = new Blob([mergedPdfFile], {type: 'application/pdf'});
-  //   await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
-  // }
+  async uploadMergedPDF(files: File[], fileName: string): Promise<void> {
+    const mergedPdfFile = await this.mergePDFFiles(files);
+    const fileBlob = new Blob([mergedPdfFile], {type: 'application/pdf'});
+    await this.uploadFile(fileBlob, fileName); // Ensure this awaits the uploadFile's completion
+  }
 
   // fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
   //   const ref = this.storage.storage.ref('pdfs');
