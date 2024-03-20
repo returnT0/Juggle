@@ -12,7 +12,6 @@ const app = express();
 const port = 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
 
 app.use(express.static(angularAppPath));
