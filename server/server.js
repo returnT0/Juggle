@@ -112,6 +112,27 @@ app.post('/api/create-pattern', async (req, res) => {
   }
 });
 
+app.put('/api/edit-pattern/:id', async (req, res) => {
+  const { id } = req.params;
+  const { newName, newConditions } = req.body;
+
+  if (!newName || !newConditions) {
+    return res.status(400).send({ message: 'New pattern name and conditions are required.' });
+  }
+
+  try {
+    await patternsCollection.doc(id).update({
+      name: newName,
+      conditions: newConditions
+    });
+
+    res.send({ message: 'Pattern updated successfully.' });
+  } catch (error) {
+    console.error("Error updating pattern:", error);
+    res.status(500).send({ message: "Failed to update the pattern.", error: error.message });
+  }
+});
+
 app.delete('/api/delete-pattern/:patternId', async (req, res) => {
   const {patternId} = req.params;
 
@@ -163,6 +184,30 @@ app.post('/api/create-condition', async (req, res) => {
   } catch (error) {
     console.error("Error creating new condition:", error);
     res.status(500).send({message: "Failed to create a new condition.", error: error.message});
+  }
+});
+
+app.put('/api/edit-condition/:id', async (req, res) => {
+  const { id } = req.params;
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).send({ message: 'Condition text is required.' });
+  }
+
+  try {
+    await conditionsCollection.doc(id).update({ text });
+
+    const patternsToUpdate = await patternsCollection.where('conditions', 'array-contains', id).get();
+
+    patternsToUpdate.forEach(async (doc) => {
+      const pattern = doc.data();
+    });
+
+    res.send({ message: 'Condition updated successfully.' });
+  } catch (error) {
+    console.error("Error updating condition:", error);
+    res.status(500).send({ message: "Failed to update the condition.", error: error.message });
   }
 });
 
