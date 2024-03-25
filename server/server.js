@@ -208,9 +208,16 @@ app.post('/api/upload-file', multer().single('file'), async (req, res) => {
   const file = bucket.file(fileName);
 
   try {
-    await file.save(req.file.buffer);
+    const options = {
+      metadata: {
+        contentType: 'application/pdf',
+      },
+    };
+
+    await file.save(req.file.buffer, options);
     const [url] = await file.getSignedUrl({
-      action: 'read', expires: '03-09-2491'
+      action: 'read',
+      expires: '03-09-2491'
     });
     console.log(`Download URL: ${url}`);
     res.send({url});
@@ -225,6 +232,9 @@ app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => 
     return res.status(400).send('No PDF files uploaded.');
   }
 
+  const customFileName = req.body.fileName || 'merged';
+  const fileName = `pdfs/${new Date().getTime()}_${customFileName}.pdf`;
+
   try {
     const mergedPdf = await PDFDocument.create();
 
@@ -235,8 +245,7 @@ app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => 
     }
 
     const mergedPdfBytes = await mergedPdf.save();
-    const fileName = `pdfs/${new Date().getTime()}_merged.pdf`;
-    new Blob([mergedPdfBytes], {type: 'application/pdf'});
+
     const {Readable} = require('stream');
     const readableInstanceStream = new Readable({
       read() {
@@ -252,7 +261,6 @@ app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => 
       }
     }))
       .on('finish', async () => {
-
         const [url] = await file.getSignedUrl({
           action: 'read', expires: '03-09-2491'
         });
