@@ -22,7 +22,7 @@ import { PdfviewerComponent } from './components/pdfviewer/pdfviewer.component';
 import {HTTP_INTERCEPTORS, HttpClientModule} from "@angular/common/http";
 import {LoggingInterceptor} from "./shared/interceptors/logging.interceptor";
 import {ErrorInterceptor} from "./shared/interceptors/error.interceptor";
-import {InterceptorService} from "./shared/services/interceptor-service/interceptor.service";
+import {InterceptorService} from "./shared/interceptors/interceptor.service";
 import {NgxSpinnerModule} from "ngx-spinner";
 import {AuthInterceptor} from "./shared/interceptors/auth.interceptor";
 

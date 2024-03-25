@@ -1,8 +1,8 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {UploadService} from '../../shared/services/upload-service/upload.service';
+import {UploadService} from '../../shared/services/upload/upload.service';
 import {Subscription} from 'rxjs';
-import {OpenaiService} from "../../shared/services/ai-service/openai.service";
+import {OpenaiService} from "../../shared/services/ai/openai.service";
 
 @Component({
   selector: 'app-pdfviewer', templateUrl: './pdfviewer.component.html', styleUrls: ['./pdfviewer.component.css'],
