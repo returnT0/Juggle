@@ -116,6 +116,24 @@ app.post('/api/create-pattern', async (req, res) => {
   }
 });
 
+app.delete('/api/delete-pattern/:patternId', async (req, res) => {
+  const { patternId } = req.params;
+
+  if (!patternId) {
+    return res.status(400).send({ message: 'Pattern ID is required.' });
+  }
+
+  try {
+    const patternDoc = patternsCollection.doc(patternId);
+    await patternDoc.delete();
+    res.send({ message: 'Pattern successfully deleted.' });
+  } catch (error) {
+    console.error("Error deleting pattern:", error);
+    res.status(500).send({ message: "Failed to delete the pattern.", error: error.message });
+  }
+});
+
+
 app.post('/api/analyze-pdf-firebase', async (req, res) => {
   let {pdfFileName} = req.body;
 
