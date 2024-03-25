@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { UploadService } from "../../shared/upload-service/upload.service";
+import { UploadService } from "../../shared/services/upload-service/upload.service";
 import { Subscription } from "rxjs";
 import {Router} from "@angular/router";
 

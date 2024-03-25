@@ -19,7 +19,11 @@ import { NotFoundComponent } from './components/not-found/not-found.component';
 import {AngularFireStorageModule} from "@angular/fire/compat/storage";
 import {AngularFirestoreModule} from "@angular/fire/compat/firestore";
 import { PdfviewerComponent } from './components/pdfviewer/pdfviewer.component';
-import { HttpClientModule} from "@angular/common/http";
+import {HTTP_INTERCEPTORS, HttpClientModule} from "@angular/common/http";
+import {LoggingInterceptor} from "./shared/interceptors/logging.interceptor";
+import {ErrorInterceptor} from "./shared/interceptors/error.interceptor";
+import {InterceptorService} from "./shared/services/interceptor-service/interceptor.service";
+import {NgxSpinnerModule} from "ngx-spinner";
 
 @NgModule({
   declarations: [
@@ -46,8 +50,13 @@ import { HttpClientModule} from "@angular/common/http";
     AngularFirestoreModule,
     FormsModule,
     HttpClientModule,
+    NgxSpinnerModule,
   ],
-  providers: [],
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: LoggingInterceptor, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: InterceptorService, multi: true},
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
