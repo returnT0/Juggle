@@ -4,6 +4,9 @@ import {Observable} from "rxjs";
 import {finalize} from "rxjs/operators";
 import {NgxSpinnerService} from "ngx-spinner";
 
+@Injectable({
+  providedIn: 'root'
+})
 export class InterceptorService {
   constructor(private spinner: NgxSpinnerService) {
   }

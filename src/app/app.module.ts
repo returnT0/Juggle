@@ -24,6 +24,7 @@ import {LoggingInterceptor} from "./shared/interceptors/logging.interceptor";
 import {ErrorInterceptor} from "./shared/interceptors/error.interceptor";
 import {InterceptorService} from "./shared/services/interceptor-service/interceptor.service";
 import {NgxSpinnerModule} from "ngx-spinner";
+import {AuthInterceptor} from "./shared/interceptors/auth.interceptor";
 
 @NgModule({
   declarations: [
@@ -56,6 +57,7 @@ import {NgxSpinnerModule} from "ngx-spinner";
     {provide: HTTP_INTERCEPTORS, useClass: LoggingInterceptor, multi: true},
     {provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true},
     {provide: HTTP_INTERCEPTORS, useClass: InterceptorService, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true},
   ],
   bootstrap: [AppComponent]
 })
