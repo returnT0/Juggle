@@ -60,6 +60,40 @@ app.get('/api/fetch-pattern/:patternId', async (req, res) => {
   }
 });
 
+app.get('/api/fetch-all-patterns', async (req, res) => {
+  try {
+    const patternsSnapshot = await patternsCollection.get();
+    const patternsDataPromises = patternsSnapshot.docs.map(async patternDoc => {
+      const patternData = patternDoc.data();
+
+      const conditionPromises = patternData.conditionIds.map(conditionId =>
+        conditionsCollection.doc(conditionId).get()
+      );
+
+      const conditionDocs = await Promise.all(conditionPromises);
+      const conditions = conditionDocs.map(doc => {
+        if (!doc.exists) {
+          console.log(`Condition ${doc.id} not found`);
+          return {id: doc.id, text: 'Condition not found or has been removed'};
+        }
+        return {id: doc.id, ...doc.data()};
+      });
+
+      return {
+        id: patternDoc.id,
+        name: patternData.name,
+        conditions
+      };
+    });
+
+    const patternsData = await Promise.all(patternsDataPromises);
+    res.json(patternsData);
+  } catch (error) {
+    console.error("Error fetching all patterns:", error);
+    res.status(500).send({message: "Failed to fetch all patterns.", error: error.message});
+  }
+});
+
 app.post('/api/create-pattern', async (req, res) => {
   const {name, conditionIds} = req.body;
 
