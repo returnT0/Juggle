@@ -16,7 +16,7 @@ const routes: Routes = [
   {path: 'sign-up', component: SignUpComponent},
   {path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
   {path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
-  {path: 'view-pdf/:id', component: PdfviewerComponent },
+  {path: 'view-pdf/:id', component: PdfviewerComponent , canActivate: [AuthGuard]},
   {path: '**', component: NotFoundComponent}
 ];
 
