@@ -66,9 +66,7 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
     const patternsDataPromises = patternsSnapshot.docs.map(async patternDoc => {
       const patternData = patternDoc.data();
 
-      const conditionPromises = patternData.conditionIds.map(conditionId =>
-        conditionsCollection.doc(conditionId).get()
-      );
+      const conditionPromises = patternData.conditionIds.map(conditionId => conditionsCollection.doc(conditionId).get());
 
       const conditionDocs = await Promise.all(conditionPromises);
       const conditions = conditionDocs.map(doc => {
@@ -80,9 +78,7 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
       });
 
       return {
-        id: patternDoc.id,
-        name: patternData.name,
-        conditions
+        id: patternDoc.id, name: patternData.name, conditions
       };
     });
 
@@ -117,55 +113,19 @@ app.post('/api/create-pattern', async (req, res) => {
 });
 
 app.delete('/api/delete-pattern/:patternId', async (req, res) => {
-  const { patternId } = req.params;
+  const {patternId} = req.params;
 
   if (!patternId) {
-    return res.status(400).send({ message: 'Pattern ID is required.' });
+    return res.status(400).send({message: 'Pattern ID is required.'});
   }
 
   try {
     const patternDoc = patternsCollection.doc(patternId);
     await patternDoc.delete();
-    res.send({ message: 'Pattern successfully deleted.' });
+    res.send({message: 'Pattern successfully deleted.'});
   } catch (error) {
     console.error("Error deleting pattern:", error);
-    res.status(500).send({ message: "Failed to delete the pattern.", error: error.message });
-  }
-});
-
-
-app.post('/api/analyze-pdf-firebase', async (req, res) => {
-  let {pdfFileName} = req.body;
-
-  if (!pdfFileName) {
-    return res.status(400).send('PDF file name not provided.');
-  }
-
-  pdfFileName = decodeURIComponent(pdfFileName);
-
-  try {
-    const file = bucket.file(pdfFileName);
-
-    const [fileBuffer] = await file.download();
-    const text = await pdfParse(fileBuffer);
-
-    const messages = [{role: "user", content: `Summarize this text: ${text.text.substring(0, 48000)}`}];
-
-    const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-3.5-turbo", messages: messages, temperature: 0.7, max_tokens: 400,
-    }, {
-      headers: {
-        'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}`
-      }
-    });
-
-    res.json(openaiResponse.data);
-  } catch (error) {
-    console.error("Error in Firebase or OpenAI request:", error.response ? error.response.data : error.message);
-    res.status(500).json({
-      message: "Failed to retrieve or analyze PDF from Firebase Storage.",
-      error: error.response ? error.response.data : error.message,
-    });
+    res.status(500).send({message: "Failed to delete the pattern.", error: error.message});
   }
 });
 
@@ -203,6 +163,41 @@ app.post('/api/create-condition', async (req, res) => {
   } catch (error) {
     console.error("Error creating new condition:", error);
     res.status(500).send({message: "Failed to create a new condition.", error: error.message});
+  }
+});
+
+app.post('/api/analyze-pdf-firebase', async (req, res) => {
+  let {pdfFileName} = req.body;
+
+  if (!pdfFileName) {
+    return res.status(400).send('PDF file name not provided.');
+  }
+
+  pdfFileName = decodeURIComponent(pdfFileName);
+
+  try {
+    const file = bucket.file(pdfFileName);
+
+    const [fileBuffer] = await file.download();
+    const text = await pdfParse(fileBuffer);
+
+    const messages = [{role: "user", content: `Summarize this text: ${text.text.substring(0, 48000)}`}];
+
+    const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: "gpt-3.5-turbo", messages: messages, temperature: 0.7, max_tokens: 400,
+    }, {
+      headers: {
+        'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}`
+      }
+    });
+
+    res.json(openaiResponse.data);
+  } catch (error) {
+    console.error("Error in Firebase or OpenAI request:", error.response ? error.response.data : error.message);
+    res.status(500).json({
+      message: "Failed to retrieve or analyze PDF from Firebase Storage.",
+      error: error.response ? error.response.data : error.message,
+    });
   }
 });
 
@@ -268,8 +263,7 @@ app.post('/api/upload-file', multer().single('file'), async (req, res) => {
 
     await file.save(req.file.buffer, options);
     const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '03-09-2491'
+      action: 'read', expires: '03-09-2491'
     });
     console.log(`Download URL: ${url}`);
     res.send({url});
