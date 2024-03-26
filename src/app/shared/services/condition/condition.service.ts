@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -10,15 +10,26 @@ export class ConditionService {
 
   constructor(private http: HttpClient) { }
 
-  fetchAllConditions(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/fetch-all-conditions`);
+  fetchAllConditions(pdfId?: string): Observable<{ predefined: Condition[], saved: Condition[] }> {
+    let params = new HttpParams();
+    if (pdfId) {
+      params = params.set('pdfId', pdfId);
+    }
+    return this.http.get<{ predefined: Condition[], saved: Condition[] }>(`${this.baseUrl}/fetch-all-conditions`, { params });
   }
 
-  createCondition(text: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/create-condition`, { text });
+
+  createCondition(text: string, pdfId?: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/create-condition`, { text, pdfId });
   }
+
 
   editCondition(id: string, text: string): Observable<any> {
     return this.http.put(`${this.baseUrl}/edit-condition/${id}`, { text });
   }
+}
+
+export interface Condition {
+  text: string;
+  // include any other properties that a condition might have
 }
