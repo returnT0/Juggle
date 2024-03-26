@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -14,8 +14,13 @@ export class PatternService {
     return this.http.get(`${this.apiUrl}/fetch-pattern/${patternId}`);
   }
 
-  fetchAllPatterns(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/fetch-all-patterns`);
+  fetchAllPatterns(pdfId?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (pdfId) {
+      params = params.set('pdfId', pdfId);
+    }
+
+    return this.http.get<any[]>(`${this.apiUrl}/fetch-all-patterns`, { params });
   }
 
   createPattern(name: string, conditionIds: string[]): Observable<any> {

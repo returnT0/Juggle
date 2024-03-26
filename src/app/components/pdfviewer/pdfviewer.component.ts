@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {UploadService} from '../../shared/services/upload/upload.service';
 import {Subscription} from 'rxjs';
@@ -7,24 +7,38 @@ import {ConditionService} from "../../shared/services/condition/condition.servic
 import {PatternService} from "../../shared/services/pattern/pattern.service";
 
 @Component({
-  selector: 'app-pdfviewer', templateUrl: './pdfviewer.component.html', styleUrls: ['./pdfviewer.component.css'],
+  selector: 'app-pdfviewer',
+  templateUrl: './pdfviewer.component.html',
+  styleUrls: ['./pdfviewer.component.css'],
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc: string = '';
   currentPdfId: string = '';
   cleanedFileName: string = '';
   analysisResponse: string = '';
-  conditions: { text: string; visible: boolean }[] = [];
+  conditions: {
+    text: string;
+    visible: boolean
+  }[] = [];
   showOverlay = false;
   showPattern = false;
-  patterns: { name: string; conditions: { text: string; visible: boolean }[] }[] = [];
+  patterns: {
+    id: string;
+    name: string;
+    conditions: {
+      text: string;
+      visible: boolean
+    }[]
+  }[] = [];
   appliedPatterns: number[] = [];
   editingPatternIndex: number | null = null;
   savedConditions: Condition[] = [];
   selectedCondition: string = 'makeYourOwn';
   newConditionValue: string = '';
-  secondaryOptions: { [key: string]: string[] } = {
-    predefined: [], saved: []
+  secondaryOptions: {
+    [key: string]: string[] } = {
+    predefined: [],
+    saved: []
   };
   secondarySelection: string = '';
 
@@ -35,7 +49,8 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     private uploadService: UploadService,
     private pdfAnalysisService: OpenaiService,
     private conditionService: ConditionService,
-    private patternService: PatternService
+    private patternService: PatternService,
+    private cdr: ChangeDetectorRef
   ) {
   }
 
@@ -46,9 +61,10 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       this.currentPdfId = pdfId;
 
       this.fetchPdfUrlById(pdfId).then(() => {
-        this.loadConditionsFromStorage();
+        this.loadConditionsFromStorage()
+        this.loadAllConditions();
+        this.loadAllPatterns();
       });
-      this.loadAllConditions();
     });
   }
 
@@ -62,6 +78,21 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
         this.secondaryOptions['predefined'] = data.predefined.map(c => c.text);
         this.savedConditions = data.saved;
       }, error: (error) => console.error('Error fetching conditions:', error)
+    });
+  }
+
+  loadAllPatterns(): void {
+    this.patternService.fetchAllPatterns(this.currentPdfId).subscribe({
+      next: (patterns) => {
+        this.patterns = patterns.map(pattern => ({
+          ...pattern,
+          conditions: pattern.conditions.map((condition: Condition) => ({
+            text: condition.text,
+            visible: condition.visible ?? true
+          }))
+        }));
+      },
+      error: (error) => console.error('Error fetching patterns:', error)
     });
   }
 
@@ -167,21 +198,30 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
-  deletePattern(patternIndex: number): void {
-    this.patterns.splice(patternIndex, 1);
-
+  deletePattern(patternId: string, patternIndex: number): void {
+    this.patternService.deletePattern(patternId).subscribe({
+      next: (response) => {
+        console.log('Pattern deleted successfully:', response);
+        // Remove the pattern from the list if deletion was successful
+        this.patterns.splice(patternIndex, 1);
+      },
+      error: (error) => console.error('Failed to delete pattern:', error),
+    });
   }
 
   addPattern(): void {
     const patternName = `pattern_${this.patterns.length + 1}`;
     const newPattern = {
-      name: patternName, conditions: [...this.conditions],
+      id: `temp-${Date.now()}`,
+      name: patternName,
+      conditions: [...this.conditions],
     };
 
-    const isDuplicate = this.patterns.some(
-      pattern => pattern.conditions.length === newPattern.conditions.length &&
-        pattern.conditions.every(pc =>
-          newPattern.conditions.some(nc => nc.text === pc.text)));
+    const isDuplicate = this.patterns.some(pattern =>
+      pattern.conditions.length === newPattern.conditions.length &&
+      pattern.conditions.every(pc =>
+        newPattern.conditions.some(nc => nc.text === pc.text))
+    );
 
     if (!isDuplicate) {
       this.patterns.push(newPattern);
@@ -209,6 +249,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
         .then((url) => {
           this.pdfSrc = url;
           this.cleanedFileName = this.extractFileNameFromUrl(url);
+          this.cdr.detectChanges();
           resolve();
         })
         .catch((error) => {
