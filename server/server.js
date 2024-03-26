@@ -26,6 +26,7 @@ const bucket = admin.storage().bucket();
 const firestore = admin.firestore();
 const conditionsCollection = firestore.collection('conditions');
 const patternsCollection = firestore.collection('patterns');
+const savedConditionsCollection = firestore.collection('savedConditions');
 
 
 app.get('/api/fetch-pattern/:patternId', async (req, res) => {
@@ -151,17 +152,38 @@ app.delete('/api/delete-pattern/:patternId', async (req, res) => {
 });
 
 app.get('/api/fetch-all-conditions', async (req, res) => {
+  const { pdfId } = req.query;
+
   try {
     const conditionsSnapshot = await conditionsCollection.get();
-    const conditions = [];
-
+    const predefinedConditions = [];
     conditionsSnapshot.forEach(doc => {
-      conditions.push({
+      predefinedConditions.push({
         id: doc.id, ...doc.data()
       });
     });
 
-    res.json(conditions);
+    const savedConditions = [];
+
+    if (pdfId) {
+      const savedConditionsSnapshot = await firestore.collection('savedConditions')
+        .where('pdfId', '==', pdfId)
+        .get();
+
+      savedConditionsSnapshot.forEach(doc => {
+        const docData = doc.data();
+        if (docData.conditions) {
+          docData.conditions.forEach(condition => {
+            savedConditions.push(condition);
+          });
+        }
+      });
+    }
+
+    res.json({
+      predefined: predefinedConditions,
+      saved: savedConditions
+    });
   } catch (error) {
     console.error("Error fetching conditions:", error);
     res.status(500).send({message: "Failed to fetch conditions.", error: error.message});
@@ -169,18 +191,28 @@ app.get('/api/fetch-all-conditions', async (req, res) => {
 });
 
 app.post('/api/create-condition', async (req, res) => {
-  const {text} = req.body;
+  const {text, pdfId} = req.body;
 
-  if (!text) {
-    return res.status(400).send({message: 'Condition text is required.'});
+  if (!text || !pdfId) {
+    return res.status(400).send({message: 'Condition text and PDF ID are required.'});
   }
 
   try {
-    const docRef = await conditionsCollection.add({text});
+    const savedConditionsSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).limit(1).get();
 
-    const newDoc = await docRef.get();
+    if (!savedConditionsSnapshot.empty) {
+      const docRef = savedConditionsSnapshot.docs[0].ref;
+      await docRef.update({
+        conditions: admin.firestore.FieldValue.arrayUnion({text})
+      });
+    } else {
+      await savedConditionsCollection.add({
+        pdfId,
+        conditions: [{text}]
+      });
+    }
 
-    res.status(201).send({id: newDoc.id, text: newDoc.data().text});
+    res.status(201).send({text});
   } catch (error) {
     console.error("Error creating new condition:", error);
     res.status(500).send({message: "Failed to create a new condition.", error: error.message});
