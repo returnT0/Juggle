@@ -27,6 +27,7 @@ const firestore = admin.firestore();
 const conditionsCollection = firestore.collection('conditions');
 const patternsCollection = firestore.collection('patterns');
 const savedConditionsCollection = firestore.collection('savedConditions');
+const savedPatternsCollection = firestore.collection('savedPatterns');
 
 
 app.get('/api/fetch-pattern/:patternId', async (req, res) => {
@@ -62,50 +63,72 @@ app.get('/api/fetch-pattern/:patternId', async (req, res) => {
 });
 
 app.get('/api/fetch-all-patterns', async (req, res) => {
+  const {pdfId} = req.query;
+
   try {
     const patternsSnapshot = await patternsCollection.get();
-    const patternsDataPromises = patternsSnapshot.docs.map(async patternDoc => {
+    const globalPatternsPromises = patternsSnapshot.docs.map(async patternDoc => {
       const patternData = patternDoc.data();
 
       const conditionPromises = patternData.conditionIds.map(conditionId => conditionsCollection.doc(conditionId).get());
-
       const conditionDocs = await Promise.all(conditionPromises);
       const conditions = conditionDocs.map(doc => {
-        if (!doc.exists) {
-          console.log(`Condition ${doc.id} not found`);
-          return {id: doc.id, text: 'Condition not found or has been removed'};
-        }
-        return {id: doc.id, ...doc.data()};
-      });
+        return doc.exists ? {id: doc.id, ...doc.data()} : null;
+      }).filter(c => c !== null); // Filter out any null values from missing conditions
 
       return {
         id: patternDoc.id, name: patternData.name, conditions
       };
     });
 
-    const patternsData = await Promise.all(patternsDataPromises);
-    res.json(patternsData);
+    let globalPatterns = await Promise.all(globalPatternsPromises);
+
+    let savedPatterns = [];
+
+    if (pdfId) {
+      const savedPatternsSnapshot = await savedPatternsCollection.where('pdfId', '==', pdfId).get();
+      const savedPatternsPromises = savedPatternsSnapshot.docs.map(async doc => {
+        const savedPatternData = doc.data();
+        const conditionPromises = savedPatternData.conditionIds.map(conditionId => conditionsCollection.doc(conditionId).get());
+        const conditionDocs = await Promise.all(conditionPromises);
+        const conditions = conditionDocs.map(doc => {
+          return doc.exists ? {id: doc.id, ...doc.data()} : null;
+        }).filter(c => c !== null); // Filter out any nulls
+
+        return {
+          id: doc.id, name: savedPatternData.name, conditions
+        };
+      });
+
+      savedPatterns = await Promise.all(savedPatternsPromises);
+    }
+
+    res.json([...globalPatterns, ...savedPatterns]);
   } catch (error) {
-    console.error("Error fetching all patterns:", error);
-    res.status(500).send({message: "Failed to fetch all patterns.", error: error.message});
+    console.error("Error fetching patterns:", error);
+    res.status(500).send({message: "Failed to fetch patterns.", error: error.message});
   }
 });
 
 app.post('/api/create-pattern', async (req, res) => {
-  const {name, conditionIds} = req.body;
+  const {name, conditionIds, pdfId} = req.body;
 
-  if (!name || !conditionIds || !Array.isArray(conditionIds) || conditionIds.length === 0) {
-    return res.status(400).send({message: 'Pattern name and a non-empty array of condition IDs are required.'});
+  if (!name || !conditionIds || !Array.isArray(conditionIds) || conditionIds.length === 0 || !pdfId) {
+    return res.status(400).send({message: 'Pattern name, a non-empty array of condition IDs, and a PDF ID are required.'});
   }
 
   try {
-    const patternRef = await patternsCollection.add({
-      name, conditionIds
+    const patternRef = await savedPatternsCollection.add({
+      name, conditionIds, pdfId
     });
 
     const newPatternDoc = await patternRef.get();
+
     res.status(201).send({
-      id: newPatternDoc.id, ...newPatternDoc.data()
+      id: newPatternDoc.id,
+      name: newPatternDoc.data().name,
+      conditionIds: newPatternDoc.data().conditionIds,
+      pdfId: newPatternDoc.data().pdfId
     });
   } catch (error) {
     console.error("Error creating new pattern:", error);
@@ -114,45 +137,44 @@ app.post('/api/create-pattern', async (req, res) => {
 });
 
 app.put('/api/edit-pattern/:id', async (req, res) => {
-  const { id } = req.params;
-  const { newName, newConditions } = req.body;
+  const {id} = req.params;
+  const {newName, newConditions} = req.body;
 
   if (!newName || !newConditions) {
-    return res.status(400).send({ message: 'New pattern name and conditions are required.' });
+    return res.status(400).send({message: 'New pattern name and conditions are required.'});
   }
 
   try {
     await patternsCollection.doc(id).update({
-      name: newName,
-      conditions: newConditions
+      name: newName, conditions: newConditions
     });
 
-    res.send({ message: 'Pattern updated successfully.' });
+    res.send({message: 'Pattern updated successfully.'});
   } catch (error) {
     console.error("Error updating pattern:", error);
-    res.status(500).send({ message: "Failed to update the pattern.", error: error.message });
+    res.status(500).send({message: "Failed to update the pattern.", error: error.message});
   }
 });
 
 app.delete('/api/delete-pattern/:patternId', async (req, res) => {
-  const {patternId} = req.params;
+  const { patternId } = req.params;
 
   if (!patternId) {
-    return res.status(400).send({message: 'Pattern ID is required.'});
+    return res.status(400).send({ message: 'Pattern ID is required.' });
   }
 
   try {
-    const patternDoc = patternsCollection.doc(patternId);
+    const patternDoc = savedPatternsCollection.doc(patternId);
     await patternDoc.delete();
-    res.send({message: 'Pattern successfully deleted.'});
+    res.send({ message: 'Pattern successfully deleted.' });
   } catch (error) {
     console.error("Error deleting pattern:", error);
-    res.status(500).send({message: "Failed to delete the pattern.", error: error.message});
+    res.status(500).send({ message: "Failed to delete the pattern.", error: error.message });
   }
 });
 
 app.get('/api/fetch-all-conditions', async (req, res) => {
-  const { pdfId } = req.query;
+  const {pdfId} = req.query;
 
   try {
     const conditionsSnapshot = await conditionsCollection.get();
@@ -181,8 +203,7 @@ app.get('/api/fetch-all-conditions', async (req, res) => {
     }
 
     res.json({
-      predefined: predefinedConditions,
-      saved: savedConditions
+      predefined: predefinedConditions, saved: savedConditions
     });
   } catch (error) {
     console.error("Error fetching conditions:", error);
@@ -207,8 +228,7 @@ app.post('/api/create-condition', async (req, res) => {
       });
     } else {
       await savedConditionsCollection.add({
-        pdfId,
-        conditions: [{text}]
+        pdfId, conditions: [{text}]
       });
     }
 
@@ -220,15 +240,15 @@ app.post('/api/create-condition', async (req, res) => {
 });
 
 app.put('/api/edit-condition/:id', async (req, res) => {
-  const { id } = req.params;
-  const { text } = req.body;
+  const {id} = req.params;
+  const {text} = req.body;
 
   if (!text) {
-    return res.status(400).send({ message: 'Condition text is required.' });
+    return res.status(400).send({message: 'Condition text is required.'});
   }
 
   try {
-    await conditionsCollection.doc(id).update({ text });
+    await conditionsCollection.doc(id).update({text});
 
     const patternsToUpdate = await patternsCollection.where('conditions', 'array-contains', id).get();
 
@@ -236,10 +256,10 @@ app.put('/api/edit-condition/:id', async (req, res) => {
       const pattern = doc.data();
     });
 
-    res.send({ message: 'Condition updated successfully.' });
+    res.send({message: 'Condition updated successfully.'});
   } catch (error) {
     console.error("Error updating condition:", error);
-    res.status(500).send({ message: "Failed to update the condition.", error: error.message });
+    res.status(500).send({message: "Failed to update the condition.", error: error.message});
   }
 });
 
