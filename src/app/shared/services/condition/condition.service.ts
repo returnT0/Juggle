@@ -22,14 +22,9 @@ export class ConditionService {
   createCondition(text: string, pdfId?: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/create-condition`, { text, pdfId });
   }
-
-
-  editCondition(id: string, text: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/edit-condition/${id}`, { text });
-  }
 }
 
 export interface Condition {
+  id?: string;
   text: string;
-  // include any other properties that a condition might have
 }

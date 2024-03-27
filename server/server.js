@@ -239,29 +239,30 @@ app.post('/api/create-condition', async (req, res) => {
   }
 });
 
-app.put('/api/edit-condition/:id', async (req, res) => {
-  const {id} = req.params;
-  const {text} = req.body;
-
-  if (!text) {
-    return res.status(400).send({message: 'Condition text is required.'});
-  }
-
-  try {
-    await conditionsCollection.doc(id).update({text});
-
-    const patternsToUpdate = await patternsCollection.where('conditions', 'array-contains', id).get();
-
-    patternsToUpdate.forEach(async (doc) => {
-      const pattern = doc.data();
-    });
-
-    res.send({message: 'Condition updated successfully.'});
-  } catch (error) {
-    console.error("Error updating condition:", error);
-    res.status(500).send({message: "Failed to update the condition.", error: error.message});
-  }
-});
+// TODO: exclude this endpoint from the final version
+// app.put('/api/edit-condition/:id', async (req, res) => {
+//   const {id} = req.params;
+//   const {text} = req.body;
+//
+//   if (!text) {
+//     return res.status(400).send({message: 'Condition text is required.'});
+//   }
+//
+//   try {
+//     await conditionsCollection.doc(id).update({text});
+//
+//     const patternsToUpdate = await patternsCollection.where('conditions', 'array-contains', id).get();
+//
+//     patternsToUpdate.forEach(async (doc) => {
+//       const pattern = doc.data();
+//     });
+//
+//     res.send({message: 'Condition updated successfully.'});
+//   } catch (error) {
+//     console.error("Error updating condition:", error);
+//     res.status(500).send({message: "Failed to update the condition.", error: error.message});
+//   }
+// });
 
 app.post('/api/apply-conditions-to-pdf', async (req, res) => {
   const { pdfId, conditionIds } = req.body;
