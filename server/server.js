@@ -28,7 +28,7 @@ const conditionsCollection = firestore.collection('conditions');
 const patternsCollection = firestore.collection('patterns');
 const savedConditionsCollection = firestore.collection('savedConditions');
 const savedPatternsCollection = firestore.collection('savedPatterns');
-
+const appliedConditionsCollection = firestore.collection('appliedConditions');
 
 app.get('/api/fetch-pattern/:patternId', async (req, res) => {
   const {patternId} = req.params;
@@ -260,6 +260,56 @@ app.put('/api/edit-condition/:id', async (req, res) => {
   } catch (error) {
     console.error("Error updating condition:", error);
     res.status(500).send({message: "Failed to update the condition.", error: error.message});
+  }
+});
+
+app.post('/api/apply-conditions-to-pdf', async (req, res) => {
+  const { pdfId, conditionIds } = req.body;
+
+  if (!pdfId || !conditionIds || !Array.isArray(conditionIds)) {
+    return res.status(400).send({ message: 'PDF ID and a non-empty array of condition IDs are required.' });
+  }
+
+  try {
+    const docRef = await appliedConditionsCollection.add({
+      pdfId,
+      conditionIds
+    });
+
+    res.status(201).send({ message: 'Conditions successfully applied to PDF.', id: docRef.id });
+  } catch (error) {
+    console.error("Error applying conditions to PDF:", error);
+    res.status(500).send({ message: "Failed to apply conditions.", error: error.message });
+  }
+});
+
+app.get('/api/fetch-applied-conditions', async (req, res) => {
+  const { pdfId } = req.query;
+
+  if (!pdfId) {
+    return res.status(400).send({ message: 'PDF ID is required.' });
+  }
+
+  try {
+    const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).get();
+    const appliedConditionIds = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      appliedConditionIds.push(...data.conditionIds);
+    });
+
+    const conditionsDetails = await Promise.all(appliedConditionIds.map(async id => {
+      let doc = await conditionsCollection.doc(id).get();
+      if (!doc.exists) {
+        doc = await savedConditionsCollection.doc(id).get();
+      }
+      return doc.exists ? { id: doc.id, ...doc.data() } : null;
+    }));
+
+    res.json(conditionsDetails.filter(condition => condition !== null));
+  } catch (error) {
+    console.error("Error fetching applied conditions:", error);
+    res.status(500).send({ message: "Failed to fetch applied conditions.", error: error.message });
   }
 });
 
