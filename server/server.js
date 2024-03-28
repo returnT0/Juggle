@@ -272,12 +272,21 @@ app.post('/api/apply-conditions-to-pdf', async (req, res) => {
   }
 
   try {
-    const docRef = await appliedConditionsCollection.add({
-      pdfId,
-      conditionIds
-    });
+    const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).limit(1).get();
 
-    res.status(201).send({ message: 'Conditions successfully applied to PDF.', id: docRef.id });
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      await appliedConditionsCollection.doc(doc.id).update({
+        conditionIds: admin.firestore.FieldValue.arrayUnion(...conditionIds)
+      });
+    } else {
+      await appliedConditionsCollection.add({
+        pdfId,
+        conditionIds
+      });
+    }
+
+    res.status(201).send({ message: 'Conditions successfully applied to PDF.' });
   } catch (error) {
     console.error("Error applying conditions to PDF:", error);
     res.status(500).send({ message: "Failed to apply conditions.", error: error.message });

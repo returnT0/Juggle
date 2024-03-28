@@ -12,37 +12,23 @@ import {PatternService} from "../../shared/services/pattern/pattern.service";
   styleUrls: ['./pdfviewer.component.css'],
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
-  pdfSrc: string = '';
-  currentPdfId: string = '';
-  cleanedFileName: string = '';
-  analysisResponse: string = '';
-  conditions: {
-    text: string;
-    visible: boolean
-  }[] = [];
+  pdfSrc = '';
+  currentPdfId = '';
+  cleanedFileName = '';
+  analysisResponse = '';
+  conditions: Condition[] = [];
   showOverlay = false;
   showPattern = false;
-  patterns: {
-    id: string;
-    name: string;
-    conditions: {
-      text: string;
-      visible: boolean
-    }[]
-  }[] = [];
+  patterns: Pattern[] = [];
   appliedPatterns: number[] = [];
   editingPatternIndex: number | null = null;
   savedConditions: Condition[] = [];
-  selectedCondition: string = 'makeYourOwn';
-  newConditionValue: string = '';
-  secondaryOptions: {
-    [key: string]: string[] } = {
-    predefined: [],
-    saved: []
-  };
-  secondarySelection: string = '';
+  selectedCondition = 'makeYourOwn';
+  newConditionValue = '';
+  secondaryOptions: SecondaryOptions = { predefined: [], saved: [] }; // TODO: secondary options should receive ids
+  secondarySelection = '';
 
-  private routeSub!: Subscription;
+  private routeSub: Subscription | undefined;
 
   constructor(
     private route: ActivatedRoute,
@@ -51,33 +37,58 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     private conditionService: ConditionService,
     private patternService: PatternService,
     private cdr: ChangeDetectorRef
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.routeSub = this.route.params.subscribe((params) => {
-      const encodedPdfId = params['id'];
-      const pdfId = atob(encodedPdfId);
-      this.currentPdfId = pdfId;
-
-      this.fetchPdfUrlById(pdfId).then(() => {
-        this.loadConditionsFromStorage()
-        this.loadAllConditions();
-        this.loadAllPatterns();
-      });
-    });
+    this.subscribeToRouteParams();
   }
 
   ngOnDestroy(): void {
+    this.unsubscribeFromRouteParams();
+  }
+
+  private subscribeToRouteParams(): void {
+    this.routeSub = this.route.params.subscribe(params => {
+      const encodedPdfId = params['id'];
+      this.currentPdfId = atob(encodedPdfId);
+      this.initializeComponentData();
+    });
+  }
+
+  private unsubscribeFromRouteParams(): void {
     this.routeSub?.unsubscribe();
+  }
+
+  private initializeComponentData(): void {
+    this.fetchPdfUrlById(this.currentPdfId)
+      .then(() => {
+        this.loadAppliedConditions();
+        this.loadAllConditions();
+        this.loadAllPatterns();
+      })
+      .catch(error => console.error('Initialization error:', error));
   }
 
   loadAllConditions(): void {
     this.conditionService.fetchAllConditions(this.currentPdfId).subscribe({
       next: (data) => {
-        this.secondaryOptions['predefined'] = data.predefined.map(c => c.text);
+        this.secondaryOptions.predefined = data.predefined.map((c) => ({ id: c.id, text: c.text }));
+        console.log('Updated secondaryOptions:', this.secondaryOptions);
         this.savedConditions = data.saved;
       }, error: (error) => console.error('Error fetching conditions:', error)
+    });
+  }
+
+  loadAppliedConditions(): void {
+    this.conditionService.fetchAppliedConditions(this.currentPdfId).subscribe({
+      next: (conditions) => {
+        this.conditions = conditions.map((condition: Condition) => ({
+          id: condition.id,
+          text: condition.text,
+          visible: condition.visible ?? true
+        }));
+      },
+      error: (error) => console.error('Error fetching applied conditions:', error)
     });
   }
 
@@ -123,23 +134,37 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.conditions[index].visible = !this.conditions[index].visible;
   }
 
-  addCondition(): void {
-    let conditionValue = this.selectedCondition === 'makeYourOwn' ? this.newConditionValue : this.secondarySelection;
-    const conditionExists = this.conditions.some((condition) => condition.text === conditionValue);
-
-    if (conditionValue && !conditionExists) {
-      this.conditions.push({text: conditionValue, visible: true});
-      this.updateConditionsInStorage();
-
-      if (this.selectedCondition === 'makeYourOwn') {
-        this.newConditionValue = '';
+  addCondition(conditionId: string): void {
+    if (conditionId) {
+      const existingCondition = this.conditions.find(condition => condition.id === conditionId);
+      if (!existingCondition) {
+        const selectedCondition = this.secondaryOptions.predefined.find(condition => condition.id === conditionId);
+        if (selectedCondition) {
+          this.conditions.push({ id: selectedCondition.id, text: selectedCondition.text, visible: true });
+          console.log('Condition added:', this.conditions);
+        }
       } else {
-        this.secondarySelection = '';
+        console.warn('Condition already exists:', conditionId);
       }
-    } else if (conditionExists) {
-      console.warn('Condition already exists:', conditionValue);
+    } else {
+      // TODO: error handling for missing condition ID
     }
   }
+
+  saveConditionsForPdf(): void {
+    const conditionIds = this.conditions
+      .filter(condition => condition.id) // Ensure only conditions with IDs are included
+      .map(condition => condition.id);
+
+    if (conditionIds.length > 0) {
+      this.conditionService.applyConditionsToPdf(this.currentPdfId, conditionIds).subscribe({
+        next: () => console.log('Conditions saved successfully for PDF'),
+        error: (error) => console.error('Error saving conditions for PDF:', error)
+      });
+    }
+  }
+
+
 
   updateConditionsInStorage(): void {
     const pdfId = this.extractPdfIdFromSrc(this.pdfSrc);
@@ -158,21 +183,21 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     return pdfSrc.substring(pdfSrc.lastIndexOf('/') + 1, pdfSrc.indexOf('?'));
   }
 
-  saveCondition(): void {
-    if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
-      this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
-        next: (response) => {
-          const newCondition: Condition = {text: response.text, visible: true};
-          this.savedConditions.push(newCondition);
-          this.secondaryOptions['saved'] = this.savedConditions.map(c => c.text);
-          this.newConditionValue = '';
-        }, error: (error) => {
-          console.error('Failed to save condition:', error);
-        }
-      });
-    } else {
-      console.warn('Condition is empty or already saved:', this.newConditionValue);
-    }
+  saveCondition(): void { // TODO: add logic to create uid for new conditions to be saved
+    // if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
+    //   this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
+    //     next: (response) => {
+    //       const newCondition: Condition = {text: response.text, visible: true};
+    //       this.savedConditions.push(newCondition);
+    //       this.secondaryOptions['saved'] = this.savedConditions.map(c => c.text);
+    //       this.newConditionValue = '';
+    //     }, error: (error) => {
+    //       console.error('Failed to save condition:', error);
+    //     }
+    //   });
+    // } else {
+    //   console.warn('Condition is empty or already saved:', this.newConditionValue);
+    // }
   }
 
   savePatternChanges(patternIndex: number): void {
@@ -270,6 +295,18 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 }
 
 interface Condition {
+  id: string; // TODO: make this field required
   text: string;
   visible?: boolean;
+}
+
+interface Pattern {
+  id: string;
+  name: string;
+  conditions: Condition[];
+}
+
+interface SecondaryOptions {
+  predefined: Condition[];
+  saved: Condition[];
 }

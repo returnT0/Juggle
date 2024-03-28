@@ -22,9 +22,18 @@ export class ConditionService {
   createCondition(text: string, pdfId?: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/create-condition`, { text, pdfId });
   }
+
+  applyConditionsToPdf(pdfId: string, conditionIds: string[]): Observable<any> {
+    const body = { pdfId, conditionIds };
+    return this.http.post(`${this.baseUrl}/apply-conditions-to-pdf`, body);
+  }
+
+  fetchAppliedConditions(pdfId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/fetch-applied-conditions?pdfId=${pdfId}`);
+  }
 }
 
 export interface Condition {
-  id?: string;
+  id: string;
   text: string;
 }

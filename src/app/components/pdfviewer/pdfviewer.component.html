@@ -89,7 +89,7 @@
               </button>
               <button
                 class="base-button"
-                (click)="toggleOverlay()">
+                (click)="saveConditionsForPdf()">
                 <span class="text-small-regular">save</span>
               </button>
             </div>
@@ -127,14 +127,15 @@
                  placeholder="Condition...">
 
           <select *ngIf="selectedCondition === 'predefined'" #secondarySelect
-                  (change)="onSecondarySelectionChange(secondarySelect.value)"
+                  (change)="addCondition(secondarySelect.value)"
                   class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1">
-            <option *ngFor="let option of secondaryOptions[selectedCondition]" [value]="option">{{ option }}</option>
+            <option *ngFor="let condition of secondaryOptions[selectedCondition]" [value]="condition.id">{{ condition.text }}</option>
           </select>
+
 
           <select *ngIf="selectedCondition === 'saved'" #savedSelect (change)="onSecondarySelectionChange(savedSelect.value)"
                   class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1">
-            <option *ngFor="let saved of savedConditions" [value]="saved.text">{{ saved.text }}</option>
+            <option *ngFor="let saved of conditions" [value]="saved.id">{{ saved.text }}</option>
           </select>
 
           <button *ngIf="selectedCondition === 'makeYourOwn'" (click)="saveCondition()"
@@ -143,7 +144,7 @@
           </button>
           <button
             class="bg-dark-1 text-light-1 rounded-r-full items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular"
-            (click)="addCondition()">
+            (click)="saveCondition()">
             new condition
           </button>
         </div>
