@@ -259,8 +259,14 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.secondarySelection = value;
   }
 
-  deleteCondition(index: number): void {
-    this.conditions.splice(index, 1);
+  deleteCondition(conditionId: string): void {
+    this.conditionService.removeConditionFromPdf(this.currentPdfId, conditionId).subscribe({
+      next: (response) => {
+        console.log('Condition removed:', response.message);
+        this.loadAppliedConditions();
+      },
+      error: (error) => console.error('Error removing condition:', error)
+    });
   }
 
   onPrimarySelectionChange(value: string): void {

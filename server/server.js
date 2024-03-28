@@ -293,6 +293,32 @@ app.post('/api/apply-conditions-to-pdf', async (req, res) => {
   }
 });
 
+app.post('/api/remove-condition-from-pdf', async (req, res) => {
+  const { pdfId, conditionId } = req.body;
+
+  if (!pdfId || !conditionId) {
+    return res.status(400).send({ message: 'PDF ID and a condition ID are required.' });
+  }
+
+  try {
+    const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).limit(1).get();
+
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      await appliedConditionsCollection.doc(doc.id).update({
+        conditionIds: admin.firestore.FieldValue.arrayRemove(conditionId)
+      });
+
+      res.send({ message: 'Condition successfully removed from PDF.' });
+    } else {
+      res.status(404).send({ message: 'No conditions found for this PDF to remove.' });
+    }
+  } catch (error) {
+    console.error("Error removing condition from PDF:", error);
+    res.status(500).send({ message: "Failed to remove condition.", error: error.message });
+  }
+});
+
 app.get('/api/fetch-applied-conditions', async (req, res) => {
   const { pdfId } = req.query;
 

@@ -28,6 +28,11 @@ export class ConditionService {
     return this.http.post(`${this.baseUrl}/apply-conditions-to-pdf`, body);
   }
 
+  removeConditionFromPdf(pdfId: string, conditionId: string): Observable<any> {
+    const body = { pdfId, conditionId };
+    return this.http.post(`${this.baseUrl}/remove-condition-from-pdf`, body);
+  }
+
   fetchAppliedConditions(pdfId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/fetch-applied-conditions?pdfId=${pdfId}`);
   }
