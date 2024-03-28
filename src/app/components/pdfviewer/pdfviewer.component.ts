@@ -24,8 +24,11 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   editingPatternIndex: number | null = null;
   savedConditions: Condition[] = [];
   selectedCondition = 'makeYourOwn';
+  selectedPredefinedConditionId: string | null = null;
+  selectedSavedConditionId: string | null = null;
+
   newConditionValue = '';
-  secondaryOptions: SecondaryOptions = { predefined: [], saved: [] }; // TODO: secondary options should receive ids
+  secondaryOptions: SecondaryOptions = { predefined: [], saved: [] };
   secondarySelection = '';
 
   private routeSub: Subscription | undefined;
@@ -134,26 +137,47 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.conditions[index].visible = !this.conditions[index].visible;
   }
 
+  addSelectedCondition(): void {
+    if (this.selectedCondition === 'predefined' && this.selectedPredefinedConditionId) {
+      this.addCondition(this.selectedPredefinedConditionId);
+    } else if (this.selectedCondition === 'saved' && this.selectedSavedConditionId) {
+      this.addCondition(this.selectedSavedConditionId);
+    } else if (this.selectedCondition === 'makeYourOwn') {
+      this.saveCondition();
+    }
+  }
+
+
   addCondition(conditionId: string): void {
     if (conditionId) {
       const existingCondition = this.conditions.find(condition => condition.id === conditionId);
       if (!existingCondition) {
-        const selectedCondition = this.secondaryOptions.predefined.find(condition => condition.id === conditionId);
+        const selectedPredefinedCondition = this.secondaryOptions.predefined.find(condition => condition.id === conditionId);
+        const selectedSavedCondition = this.savedConditions.find(condition => condition.id === conditionId);
+
+        const selectedCondition = selectedPredefinedCondition || selectedSavedCondition;
+
         if (selectedCondition) {
-          this.conditions.push({ id: selectedCondition.id, text: selectedCondition.text, visible: true });
-          console.log('Condition added:', this.conditions);
+          this.conditions.push({
+            id: selectedCondition.id,
+            text: selectedCondition.text,
+            visible: true
+          });
+          console.log('Condition added:', selectedCondition);
+        } else {
+          console.warn('No condition found with ID:', conditionId);
         }
       } else {
         console.warn('Condition already exists:', conditionId);
       }
     } else {
-      // TODO: error handling for missing condition ID
+      console.error('Condition ID is required to add a condition.');
     }
   }
 
   saveConditionsForPdf(): void {
     const conditionIds = this.conditions
-      .filter(condition => condition.id) // Ensure only conditions with IDs are included
+      .filter(condition => condition.id)
       .map(condition => condition.id);
 
     if (conditionIds.length > 0) {
@@ -163,8 +187,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       });
     }
   }
-
-
 
   updateConditionsInStorage(): void {
     const pdfId = this.extractPdfIdFromSrc(this.pdfSrc);
@@ -183,21 +205,22 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     return pdfSrc.substring(pdfSrc.lastIndexOf('/') + 1, pdfSrc.indexOf('?'));
   }
 
-  saveCondition(): void { // TODO: add logic to create uid for new conditions to be saved
-    // if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
-    //   this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
-    //     next: (response) => {
-    //       const newCondition: Condition = {text: response.text, visible: true};
-    //       this.savedConditions.push(newCondition);
-    //       this.secondaryOptions['saved'] = this.savedConditions.map(c => c.text);
-    //       this.newConditionValue = '';
-    //     }, error: (error) => {
-    //       console.error('Failed to save condition:', error);
-    //     }
-    //   });
-    // } else {
-    //   console.warn('Condition is empty or already saved:', this.newConditionValue);
-    // }
+  saveCondition(): void {
+    if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
+      this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
+        next: (response) => {
+          const newCondition: Condition = {id: response.id, text: response.text, visible: true};
+          this.savedConditions.push(newCondition);
+          this.secondaryOptions['saved'] = this.savedConditions;
+          this.newConditionValue = '';
+        },
+        error: (error) => {
+          console.error('Failed to save condition:', error);
+        }
+      });
+    } else {
+      console.warn('Condition is empty or already saved:', this.newConditionValue);
+    }
   }
 
   savePatternChanges(patternIndex: number): void {
@@ -269,9 +292,17 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     });
   }
 
-  onPrimarySelectionChange(value: string): void {
-    this.selectedCondition = value;
-    this.secondarySelection = '';
+  onPrimarySelectionChange(newSelection: string): void {
+    this.selectedCondition = newSelection;
+
+    if (newSelection === 'predefined' && this.secondaryOptions.predefined.length > 0) {
+      this.selectedPredefinedConditionId = this.secondaryOptions.predefined[0].id;
+    } else if (newSelection === 'saved' && this.savedConditions.length > 0) {
+      this.selectedSavedConditionId = this.savedConditions[0].id;
+    } else {
+      this.selectedPredefinedConditionId = null;
+      this.selectedSavedConditionId = null;
+    }
   }
 
   private fetchPdfUrlById(pdfId: string): Promise<void> {
@@ -301,7 +332,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 }
 
 interface Condition {
-  id: string; // TODO: make this field required
+  id: string;
   text: string;
   visible?: boolean;
 }

@@ -19,8 +19,9 @@ export class ConditionService {
   }
 
 
-  createCondition(text: string, pdfId?: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/create-condition`, { text, pdfId });
+  createCondition(text: string, pdfId: string): Observable<any> {
+    const body = { text, pdfId };
+    return this.http.post(`${this.baseUrl}/create-condition`, body);
   }
 
   applyConditionsToPdf(pdfId: string, conditionIds: string[]): Observable<any> {

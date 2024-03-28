@@ -11,7 +11,7 @@ const {PDFDocument} = require('pdf-lib');
 const app = express();
 const port = 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
+const { v4: uuidv4 } = require('uuid');
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
 
 app.use(express.static(angularAppPath));
@@ -74,7 +74,7 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
       const conditionDocs = await Promise.all(conditionPromises);
       const conditions = conditionDocs.map(doc => {
         return doc.exists ? {id: doc.id, ...doc.data()} : null;
-      }).filter(c => c !== null); // Filter out any null values from missing conditions
+      }).filter(c => c !== null);
 
       return {
         id: patternDoc.id, name: patternData.name, conditions
@@ -93,7 +93,7 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
         const conditionDocs = await Promise.all(conditionPromises);
         const conditions = conditionDocs.map(doc => {
           return doc.exists ? {id: doc.id, ...doc.data()} : null;
-        }).filter(c => c !== null); // Filter out any nulls
+        }).filter(c => c !== null);
 
         return {
           id: doc.id, name: savedPatternData.name, conditions
@@ -212,11 +212,13 @@ app.get('/api/fetch-all-conditions', async (req, res) => {
 });
 
 app.post('/api/create-condition', async (req, res) => {
-  const {text, pdfId} = req.body;
+  const { text, pdfId } = req.body;
 
   if (!text || !pdfId) {
-    return res.status(400).send({message: 'Condition text and PDF ID are required.'});
+    return res.status(400).send({ message: 'Condition text and PDF ID are required.' });
   }
+
+  const conditionId = uuidv4();
 
   try {
     const savedConditionsSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).limit(1).get();
@@ -224,45 +226,22 @@ app.post('/api/create-condition', async (req, res) => {
     if (!savedConditionsSnapshot.empty) {
       const docRef = savedConditionsSnapshot.docs[0].ref;
       await docRef.update({
-        conditions: admin.firestore.FieldValue.arrayUnion({text})
+        conditions: admin.firestore.FieldValue.arrayUnion({ id: conditionId, text })
       });
     } else {
       await savedConditionsCollection.add({
-        pdfId, conditions: [{text}]
+        pdfId,
+        conditions: [{ id: conditionId, text }]
       });
     }
 
-    res.status(201).send({text});
+    // Include the unique ID in the response
+    res.status(201).send({ id: conditionId, text });
   } catch (error) {
     console.error("Error creating new condition:", error);
-    res.status(500).send({message: "Failed to create a new condition.", error: error.message});
+    res.status(500).send({ message: "Failed to create a new condition.", error: error.message });
   }
 });
-
-// TODO: exclude this endpoint from the final version
-// app.put('/api/edit-condition/:id', async (req, res) => {
-//   const {id} = req.params;
-//   const {text} = req.body;
-//
-//   if (!text) {
-//     return res.status(400).send({message: 'Condition text is required.'});
-//   }
-//
-//   try {
-//     await conditionsCollection.doc(id).update({text});
-//
-//     const patternsToUpdate = await patternsCollection.where('conditions', 'array-contains', id).get();
-//
-//     patternsToUpdate.forEach(async (doc) => {
-//       const pattern = doc.data();
-//     });
-//
-//     res.send({message: 'Condition updated successfully.'});
-//   } catch (error) {
-//     console.error("Error updating condition:", error);
-//     res.status(500).send({message: "Failed to update the condition.", error: error.message});
-//   }
-// });
 
 app.post('/api/apply-conditions-to-pdf', async (req, res) => {
   const { pdfId, conditionIds } = req.body;
@@ -328,21 +307,30 @@ app.get('/api/fetch-applied-conditions', async (req, res) => {
 
   try {
     const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).get();
-    const appliedConditionIds = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      appliedConditionIds.push(...data.conditionIds);
-    });
+    let conditionDetails = [];
 
-    const conditionsDetails = await Promise.all(appliedConditionIds.map(async id => {
-      let doc = await conditionsCollection.doc(id).get();
-      if (!doc.exists) {
-        doc = await savedConditionsCollection.doc(id).get();
-      }
-      return doc.exists ? { id: doc.id, ...doc.data() } : null;
-    }));
+    if (!snapshot.empty) {
+      const data = snapshot.docs[0].data();
+      const appliedConditionIds = data.conditionIds;
 
-    res.json(conditionsDetails.filter(condition => condition !== null));
+      conditionDetails = await Promise.all(appliedConditionIds.map(async id => {
+        let doc = await conditionsCollection.doc(id).get();
+        if (doc.exists) {
+          return { id: doc.id, ...doc.data() };
+        } else {
+          const savedSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).get();
+          if (!savedSnapshot.empty) {
+            const savedData = savedSnapshot.docs[0].data().conditions.find(c => c.id === id);
+            return savedData ? { id, ...savedData } : null;
+          }
+        }
+        return null;
+      }));
+
+      conditionDetails = conditionDetails.filter(detail => detail !== null);
+    }
+
+    res.json(conditionDetails);
   } catch (error) {
     console.error("Error fetching applied conditions:", error);
     res.status(500).send({ message: "Failed to fetch applied conditions.", error: error.message });

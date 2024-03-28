@@ -125,17 +125,16 @@
           <input *ngIf="selectedCondition === 'makeYourOwn'" [(ngModel)]="newConditionValue" type="text"
                  class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1"
                  placeholder="Condition...">
-
-          <select *ngIf="selectedCondition === 'predefined'" #secondarySelect
+          <select *ngIf="selectedCondition === 'predefined'" [(ngModel)]="selectedPredefinedConditionId" #secondarySelect
                   (change)="addCondition(secondarySelect.value)"
                   class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1">
             <option *ngFor="let condition of secondaryOptions[selectedCondition]" [value]="condition.id">{{ condition.text }}</option>
           </select>
 
-
-          <select *ngIf="selectedCondition === 'saved'" #savedSelect (change)="onSecondarySelectionChange(savedSelect.value)"
+          <select *ngIf="selectedCondition === 'saved'" [(ngModel)]="selectedSavedConditionId" #savedSelect
+                  (change)="addCondition(savedSelect.value)"
                   class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1">
-            <option *ngFor="let saved of conditions" [value]="saved.id">{{ saved.text }}</option>
+            <option *ngFor="let saved of savedConditions" [value]="saved.id">{{ saved.text }}</option>
           </select>
 
           <button *ngIf="selectedCondition === 'makeYourOwn'" (click)="saveCondition()"
@@ -144,7 +143,7 @@
           </button>
           <button
             class="bg-dark-1 text-light-1 rounded-r-full items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular"
-            (click)="saveCondition()">
+            (click)="addSelectedCondition()">
             new condition
           </button>
         </div>
