@@ -18,9 +18,9 @@ export class NavComponent implements OnInit {
     return this.authService.isAuthenticated;
   }
 
-  signOut(): void {
-    this.authService.signOut();
-    this.router.navigate(['/landing']);
+  async signOut(): Promise<void> {
+    await this.authService.signOut();
+    await this.router.navigate(['/landing']);
   }
 
   ngOnInit(): void {

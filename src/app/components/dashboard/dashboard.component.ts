@@ -25,16 +25,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   refreshPdfList(): void {
     setTimeout(() => {
-      this.uploadService.fetchAllPDFs().subscribe(files => {
-        this.pdfUrls = files.map(file => ({
-          id: file.id,
-          url: file.url,
-          title: this.extractTitleFromUrl(file.url),
-          path: file.path
-        }));
-      }, error => console.error(error));
+      this.uploadService.fetchAllPDFs().subscribe({
+        next: (files) => {
+          this.pdfUrls = files.map(file => ({
+            id: file.id,
+            url: file.url,
+            title: this.extractTitleFromUrl(file.url),
+            path: file.path
+          }));
+        },
+        error: (error) => {
+          console.error(error);
+          if (error.status === 401 || error.status === 403) {
+            console.error('Unauthorized access. Please log in again.');
+          }
+        }
+      });
     }, 1000);
   }
+
 
   private extractTitleFromUrl(url: string): string {
     url = decodeURIComponent(url);

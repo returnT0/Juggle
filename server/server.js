@@ -14,7 +14,29 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const { v4: uuidv4 } = require('uuid');
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
 
+
+// TODO: fix the recall of the fetch-all-pdfs after signing out
+const authenticateUser = async (req, res, next) => {
+  const authorizationHeader = req.headers.authorization;
+
+  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    console.error('No ID token was provided in the Authorization header.');
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  const idToken = authorizationHeader.split('Bearer ')[1];
+  try {
+    req.user = await admin.auth().verifyIdToken(idToken);
+    next();
+  } catch (error) {
+    console.error('Error while verifying Firebase ID token:', error);
+    res.status(403).send('Unauthorized');
+  }
+};
+
 app.use(express.static(angularAppPath));
+app.use('/api', authenticateUser);
 
 app.use(bodyParser.json());
 
@@ -389,11 +411,12 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
   }
 });
 
-app.get('/api/fetch-all-pdfs', async (req, res) => {
+app.get('/api/fetch-all-pdfs', authenticateUser, async (req, res) => {
+  const userUid = req.user.uid;
 
   try {
-    const [files] = await bucket.getFiles();
-    const metadataPromises = files.map(file => file.getSignedUrl({action: 'read', expires: '03-09-2100'})
+    const [files] = await bucket.getFiles({ prefix: `pdfs/${userUid}/` }); // Adjust path as necessary
+    const metadataPromises = files.map(file => file.getSignedUrl({ action: 'read', expires: '03-09-2100' })
       .then(url => ({
         id: file.name, url, path: file.metadata.selfLink
       })));
@@ -439,7 +462,8 @@ app.post('/api/upload-file', multer().single('file'), async (req, res) => {
     return res.status(400).send('No file uploaded.');
   }
 
-  const fileName = `pdfs/${new Date().getTime()}_${req.file.originalname}`;
+  const userUid = req.user.uid;
+  const fileName = `pdfs/${userUid}/${new Date().getTime()}_${req.file.originalname}`;
   const file = bucket.file(fileName);
 
   try {
@@ -453,7 +477,6 @@ app.post('/api/upload-file', multer().single('file'), async (req, res) => {
     const [url] = await file.getSignedUrl({
       action: 'read', expires: '03-09-2491'
     });
-    console.log(`Download URL: ${url}`);
     res.send({url});
   } catch (error) {
     console.error("Error uploading file:", error);
@@ -466,8 +489,9 @@ app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => 
     return res.status(400).send('No PDF files uploaded.');
   }
 
+  const userUid = req.user.uid;
   const customFileName = req.body.fileName || 'merged';
-  const fileName = `pdfs/${new Date().getTime()}_${customFileName}.pdf`;
+  const fileName = `pdfs/${userUid}/${new Date().getTime()}_${customFileName}.pdf`;
 
   try {
     const mergedPdf = await PDFDocument.create();

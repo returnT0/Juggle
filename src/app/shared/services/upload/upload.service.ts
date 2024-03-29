@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
 import {AngularFireStorage} from "@angular/fire/compat/storage";
 import {catchError, lastValueFrom, Observable, throwError} from "rxjs";
-import {finalize} from 'rxjs/operators';
+import {finalize, switchMap} from 'rxjs/operators';
 import {PDFDocument} from 'pdf-lib';
 import {AngularFirestore} from "@angular/fire/compat/firestore";
 import {HttpClient} from "@angular/common/http";
+import {AngularFireAuth} from "@angular/fire/compat/auth";
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,8 @@ export class UploadService {
   constructor(
     private storage: AngularFireStorage,
     private db: AngularFirestore,
-    private http: HttpClient
+    private http: HttpClient,
+    private afAuth: AngularFireAuth
   ) {
   }
 
@@ -44,7 +46,16 @@ export class UploadService {
   }
 
   fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
-    return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs');
+    return this.afAuth.idToken.pipe(
+      switchMap(token => {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs', { headers });
+      }),
+      catchError(error => {
+        console.error('Error fetching PDFs:', error);
+        return throwError(error);
+      })
+    );
   }
 
   async getPDFUrlById(pdfId: string): Promise<string> {

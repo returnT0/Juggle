@@ -67,7 +67,7 @@ export class AuthService {
     }
   }
 
-  signOut(): Observable<void> {
+  async signOut(): Promise<Observable<void>> {
     this.cookieService.delete('authToken');
     return from(this.auth.signOut());
   }
