@@ -67,40 +67,39 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
 
   try {
     const patternsSnapshot = await patternsCollection.get();
-    const globalPatternsPromises = patternsSnapshot.docs.map(async patternDoc => {
+    const globalPatterns = await Promise.all(patternsSnapshot.docs.map(async patternDoc => {
       const patternData = patternDoc.data();
-
-      const conditionPromises = patternData.conditionIds.map(conditionId => conditionsCollection.doc(conditionId).get());
-      const conditionDocs = await Promise.all(conditionPromises);
-      const conditions = conditionDocs.map(doc => {
-        return doc.exists ? {id: doc.id, ...doc.data()} : null;
-      }).filter(c => c !== null);
-
-      return {
-        id: patternDoc.id, name: patternData.name, conditions
-      };
-    });
-
-    let globalPatterns = await Promise.all(globalPatternsPromises);
+      const conditions = await Promise.all(patternData.conditionIds.map(async conditionId => {
+        const conditionDoc = await conditionsCollection.doc(conditionId).get();
+        if (conditionDoc.exists) {
+          return { id: conditionDoc.id, ...conditionDoc.data() };
+        }
+      }));
+      return { id: patternDoc.id, name: patternData.name, conditions: conditions.filter(c => c) };
+    }));
 
     let savedPatterns = [];
 
     if (pdfId) {
       const savedPatternsSnapshot = await savedPatternsCollection.where('pdfId', '==', pdfId).get();
-      const savedPatternsPromises = savedPatternsSnapshot.docs.map(async doc => {
-        const savedPatternData = doc.data();
-        const conditionPromises = savedPatternData.conditionIds.map(conditionId => conditionsCollection.doc(conditionId).get());
-        const conditionDocs = await Promise.all(conditionPromises);
-        const conditions = conditionDocs.map(doc => {
-          return doc.exists ? {id: doc.id, ...doc.data()} : null;
-        }).filter(c => c !== null);
-
-        return {
-          id: doc.id, name: savedPatternData.name, conditions
-        };
-      });
-
-      savedPatterns = await Promise.all(savedPatternsPromises);
+      savedPatterns = await Promise.all(savedPatternsSnapshot.docs.map(async doc => {
+        const patternData = doc.data();
+        const conditions = await Promise.all(patternData.conditionIds.map(async conditionId => {
+          let conditionDoc = await conditionsCollection.doc(conditionId).get();
+          if (!conditionDoc.exists) {
+            const savedConditionsSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).get();
+            savedConditionsSnapshot.forEach(doc => {
+              doc.data().conditions.forEach(condition => {
+                if (condition.id === conditionId) {
+                  conditionDoc = {exists: true, data: () => condition};
+                }
+              });
+            });
+          }
+          return conditionDoc.exists ? { id: conditionId, ...conditionDoc.data() } : null;
+        }));
+        return { id: doc.id, name: patternData.name, conditions: conditions.filter(c => c) };
+      }));
     }
 
     res.json([...globalPatterns, ...savedPatterns]);
@@ -111,17 +110,35 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
 });
 
 app.post('/api/create-pattern', async (req, res) => {
-  const {name, conditionIds, pdfId} = req.body;
+  const { name, conditionIds, pdfId } = req.body;
 
   if (!name || !conditionIds || !Array.isArray(conditionIds) || conditionIds.length === 0 || !pdfId) {
-    return res.status(400).send({message: 'Pattern name, a non-empty array of condition IDs, and a PDF ID are required.'});
+    return res.status(400).send({ message: 'Pattern name, a non-empty array of condition IDs, and a PDF ID are required.' });
   }
 
   try {
-    const patternRef = await savedPatternsCollection.add({
-      name, conditionIds, pdfId
+    const existingPatternsSnapshot = await savedPatternsCollection
+      .where('pdfId', '==', pdfId)
+      .where('name', '==', name)
+      .get();
+
+    let isDuplicate = false;
+    existingPatternsSnapshot.forEach(doc => {
+      const pattern = doc.data();
+      const hasAllConditions = conditionIds.length === pattern.conditionIds.length &&
+        conditionIds.every(id => pattern.conditionIds.includes(id)) &&
+        pattern.conditionIds.every(id => conditionIds.includes(id));
+
+      if (hasAllConditions) {
+        isDuplicate = true;
+      }
     });
 
+    if (isDuplicate) {
+      return res.status(400).send({ message: 'A pattern with the same name and conditions already exists for this PDF.' });
+    }
+
+    const patternRef = await savedPatternsCollection.add({ name, conditionIds, pdfId });
     const newPatternDoc = await patternRef.get();
 
     res.status(201).send({
@@ -132,7 +149,7 @@ app.post('/api/create-pattern', async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating new pattern:", error);
-    res.status(500).send({message: "Failed to create a new pattern.", error: error.message});
+    res.status(500).send({ message: "Failed to create a new pattern.", error: error.message });
   }
 });
 

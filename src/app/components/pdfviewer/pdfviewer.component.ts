@@ -188,19 +188,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateConditionsInStorage(): void {
-    const pdfId = this.extractPdfIdFromSrc(this.pdfSrc);
-    localStorage.setItem(`pdfConditions_${pdfId}`, JSON.stringify(this.conditions));
-  }
-
-  loadConditionsFromStorage(): void {
-    const pdfId = this.extractPdfIdFromSrc(this.pdfSrc);
-    const storedConditions = localStorage.getItem(`pdfConditions_${pdfId}`);
-    if (storedConditions) {
-      this.conditions = JSON.parse(storedConditions);
-    }
-  }
-
   extractPdfIdFromSrc(pdfSrc: string): string {
     return pdfSrc.substring(pdfSrc.lastIndexOf('/') + 1, pdfSrc.indexOf('?'));
   }
@@ -259,27 +246,29 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   addPattern(): void {
     const patternName = `pattern_${this.patterns.length + 1}`;
-    const newPattern = {
-      id: `temp-${Date.now()}`,
-      name: patternName,
-      conditions: [...this.conditions],
-    };
+    const conditionIds = this.conditions.filter(c => c.id).map(c => c.id);
 
     const isDuplicate = this.patterns.some(pattern =>
-      pattern.conditions.length === newPattern.conditions.length &&
-      pattern.conditions.every(pc =>
-        newPattern.conditions.some(nc => nc.text === pc.text))
+      pattern.conditions.length === conditionIds.length &&
+      pattern.conditions.every(pc => conditionIds.includes(pc.id))
     );
 
     if (!isDuplicate) {
-      this.patterns.push(newPattern);
+      this.patternService.createPattern(patternName, conditionIds, this.currentPdfId).subscribe({
+        next: (response) => {
+          const createdPattern = {
+            id: response.id,
+            name: response.name,
+            conditions: [...this.conditions.filter(c => conditionIds.includes(c.id))],
+          };
+          this.patterns.push(createdPattern);
+          console.log('Pattern created successfully:', createdPattern);
+        },
+        error: (error) => console.error('Failed to create pattern:', error)
+      });
     } else {
       alert('A pattern with the exact same conditions already exists.');
     }
-  }
-
-  onSecondarySelectionChange(value: string): void {
-    this.secondarySelection = value;
   }
 
   deleteCondition(conditionId: string): void {

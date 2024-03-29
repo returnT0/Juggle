@@ -23,8 +23,9 @@ export class PatternService {
     return this.http.get<any[]>(`${this.apiUrl}/fetch-all-patterns`, { params });
   }
 
-  createPattern(name: string, conditionIds: string[]): Observable<any> {
-    return this.http.post(`${this.apiUrl}/create-pattern`, { name, conditionIds });
+  createPattern(name: string, conditionIds: string[], pdfId: string): Observable<any> {
+    const body = { name, conditionIds, pdfId };
+    return this.http.post(`${this.apiUrl}/create-pattern`, body);
   }
 
   editPattern(id: string, newName: string, newConditions: string[]): Observable<any> {
