@@ -175,6 +175,75 @@ app.post('/api/create-pattern', async (req, res) => {
   }
 });
 
+app.post('/api/apply-patterns-to-pdf', async (req, res) => {
+  const { pdfId, patternIds } = req.body;
+  const userId = req.user.uid; // Assumed to be set by the authenticateUser middleware
+
+  if (!pdfId || !patternIds || !Array.isArray(patternIds)) {
+    return res.status(400).send({ message: 'PDF ID and a list of pattern IDs are required.' });
+  }
+
+  try {
+    // Initialize an array to hold all unique condition IDs
+    let allConditionIds = [];
+
+    // Fetch each pattern and accumulate their condition IDs
+    for (const patternId of patternIds) {
+      const patternDoc = await patternsCollection.doc(patternId).get();
+      if (!patternDoc.exists) {
+        const savedPatternDoc = await savedPatternsCollection.doc(patternId).get();
+        if (!savedPatternDoc.exists || savedPatternDoc.data().userId !== userId) {
+          continue; // Skip if the pattern does not exist or does not belong to the user
+        }
+        allConditionIds.push(...savedPatternDoc.data().conditionIds);
+      } else {
+        allConditionIds.push(...patternDoc.data().conditionIds);
+      }
+    }
+
+    // Remove duplicate condition IDs
+    allConditionIds = [...new Set(allConditionIds)];
+
+    // Fetch condition details for all unique condition IDs
+    const conditionsDetails = await Promise.all(allConditionIds.map(async conditionId => {
+      // First, attempt to fetch the condition from the global conditions collection
+      let conditionDoc = await conditionsCollection.doc(conditionId).get();
+      if (conditionDoc.exists) {
+        return { id: conditionId, text: conditionDoc.data().text };
+      } else {
+        // If not in global, fetch from the saved conditions
+        const querySnapshot = await savedConditionsCollection
+          .where('conditions.id', 'array-contains', conditionId)
+          .where('userId', '==', userId)
+          .get();
+        if (!querySnapshot.empty) {
+          const savedCondition = querySnapshot.docs
+            .flatMap(doc => doc.data().conditions)
+            .find(c => c.id === conditionId);
+          return savedCondition ? { id: conditionId, text: savedCondition.text } : null;
+        }
+      }
+      return null; // Condition not found
+    }));
+
+    const filteredConditionsDetails = conditionsDetails.filter(condition => condition !== null);
+
+    // Example: Update a document in appliedConditionsCollection with the condition details
+    await appliedConditionsCollection.doc(pdfId).set({
+      userId,
+      conditions: filteredConditionsDetails
+    }, { merge: true });
+
+    res.status(200).send({
+      message: 'Patterns applied successfully.',
+      conditions: filteredConditionsDetails
+    });
+  } catch (error) {
+    console.error("Error applying patterns to PDF:", error);
+    res.status(500).send({ message: "Failed to apply patterns.", error: error.message });
+  }
+});
+
 app.put('/api/edit-pattern/:id', async (req, res) => {
   const {id} = req.params;
   const {newName, newConditions} = req.body;
