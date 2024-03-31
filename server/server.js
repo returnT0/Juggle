@@ -177,23 +177,21 @@ app.post('/api/create-pattern', async (req, res) => {
 
 app.post('/api/apply-patterns-to-pdf', async (req, res) => {
   const { pdfId, patternIds } = req.body;
-  const userId = req.user.uid; // Assumed to be set by the authenticateUser middleware
+  const userId = req.user.uid;
 
   if (!pdfId || !patternIds || !Array.isArray(patternIds)) {
     return res.status(400).send({ message: 'PDF ID and a list of pattern IDs are required.' });
   }
 
   try {
-    // Initialize an array to hold all unique condition IDs
     let allConditionIds = [];
 
-    // Fetch each pattern and accumulate their condition IDs
     for (const patternId of patternIds) {
       const patternDoc = await patternsCollection.doc(patternId).get();
       if (!patternDoc.exists) {
         const savedPatternDoc = await savedPatternsCollection.doc(patternId).get();
         if (!savedPatternDoc.exists || savedPatternDoc.data().userId !== userId) {
-          continue; // Skip if the pattern does not exist or does not belong to the user
+          continue;
         }
         allConditionIds.push(...savedPatternDoc.data().conditionIds);
       } else {
@@ -201,17 +199,13 @@ app.post('/api/apply-patterns-to-pdf', async (req, res) => {
       }
     }
 
-    // Remove duplicate condition IDs
     allConditionIds = [...new Set(allConditionIds)];
 
-    // Fetch condition details for all unique condition IDs
     const conditionsDetails = await Promise.all(allConditionIds.map(async conditionId => {
-      // First, attempt to fetch the condition from the global conditions collection
       let conditionDoc = await conditionsCollection.doc(conditionId).get();
       if (conditionDoc.exists) {
         return { id: conditionId, text: conditionDoc.data().text };
       } else {
-        // If not in global, fetch from the saved conditions
         const querySnapshot = await savedConditionsCollection
           .where('conditions.id', 'array-contains', conditionId)
           .where('userId', '==', userId)
@@ -223,12 +217,11 @@ app.post('/api/apply-patterns-to-pdf', async (req, res) => {
           return savedCondition ? { id: conditionId, text: savedCondition.text } : null;
         }
       }
-      return null; // Condition not found
+      return null;
     }));
 
     const filteredConditionsDetails = conditionsDetails.filter(condition => condition !== null);
 
-    // Example: Update a document in appliedConditionsCollection with the condition details
     await appliedConditionsCollection.doc(pdfId).set({
       userId,
       conditions: filteredConditionsDetails
