@@ -28,6 +28,11 @@ export class PatternService {
     return this.http.post(`${this.apiUrl}/create-pattern`, body);
   }
 
+  applyPatternsToPdf(pdfId: string, patternIds: string[]): Observable<any> {
+    const body = { pdfId, patternIds };
+    return this.http.post(`${this.apiUrl}/apply-patterns-to-pdf`, body);
+  }
+
   editPattern(id: string, newName: string, newConditions: string[]): Observable<any> {
     return this.http.put(`${this.apiUrl}/edit-pattern/${id}`, { newName, newConditions });
   }
