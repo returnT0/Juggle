@@ -21,6 +21,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   showPattern = false;
   patterns: Pattern[] = [];
   appliedPatterns: number[] = [];
+  selectedPatterns = new Set<number>();
   editingPatternIndex: number | null = null;
   savedConditions: Condition[] = [];
   selectedCondition = 'makeYourOwn';
@@ -29,7 +30,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   newConditionValue = '';
   secondaryOptions: SecondaryOptions = { predefined: [], saved: [] };
-  secondarySelection = '';
 
   private routeSub: Subscription | undefined;
 
@@ -233,6 +233,40 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
+  togglePatternSelection(pIndex: number): void {
+    if (this.selectedPatterns.has(pIndex)) {
+      this.selectedPatterns.delete(pIndex);
+    } else {
+      this.selectedPatterns.add(pIndex);
+    }
+  }
+
+  applySelectedPatterns(): void {
+    const patternIds = Array.from(this.selectedPatterns).map(index => this.patterns[index].id);
+
+    this.patternService.applyPatternsToPdf(this.currentPdfId, patternIds).subscribe({
+      next: (response) => {
+        console.log('Patterns applied successfully:', response);
+        this.conditions = [];
+        response.appliedPatterns.forEach((pattern: any) => {
+          pattern.conditions.forEach((condition: Condition) => {
+            if (!this.conditions.some(c => c.id === condition.id)) {
+              this.conditions.push({
+                id: condition.id,
+                text: condition.text,
+                visible: true
+              });
+            }
+          });
+        });
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error('Error applying patterns to PDF:', error)
+    });
+  }
+
+
+
   deletePattern(patternId: string, patternIndex: number): void {
     this.patternService.deletePattern(patternId).subscribe({
       next: (response) => {
@@ -330,6 +364,7 @@ interface Pattern {
   id: string;
   name: string;
   conditions: Condition[];
+  selected?: boolean;
 }
 
 interface SecondaryOptions {

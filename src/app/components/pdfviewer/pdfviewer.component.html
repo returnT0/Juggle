@@ -23,7 +23,7 @@
                 </button>
                 <button
                   class="base-button"
-                  (click)="togglePattern()">
+                  (click)="applySelectedPatterns()" [disabled]="selectedPatterns.size === 0">
                   <span class="text-small-regular">save</span>
                 </button>
               </div>
@@ -32,9 +32,10 @@
           <div class="grid grid-cols-4 gap-x-3 gap-y-3 w-full self-start overflow-y-scroll max-h-[59vh]">
             <div *ngFor="let pattern of patterns; let pIndex = index"
                  class="relative w-full bg-light-2 rounded-md p-3 h-auto shadow shadow-primary/10">
-              <div *ngIf="editingPatternIndex !== pIndex">
-                <div class="uppercase text-heading4-medium">{{ pattern.name }}</div>
-              </div>
+              <input type="checkbox" [id]="'pattern-' + pIndex" class="mr-2"
+                     (change)="togglePatternSelection(pIndex)">
+              <label [for]="'pattern-' + pIndex" class="uppercase text-heading4-medium">{{ pattern.name }}</label>
+
               <div *ngIf="editingPatternIndex === pIndex">
                 <input [(ngModel)]="pattern.name" class="text-input-class" type="text">
                 <button (click)="savePatternChanges(pIndex)">Save</button>
