@@ -177,63 +177,57 @@ app.post('/api/create-pattern', async (req, res) => {
 
 app.post('/api/apply-patterns-to-pdf', async (req, res) => {
   const { pdfId, patternIds } = req.body;
-  const userId = req.user.uid;
 
-  if (!pdfId || !patternIds || !Array.isArray(patternIds)) {
-    return res.status(400).send({ message: 'PDF ID and a list of pattern IDs are required.' });
+  if (!pdfId || !patternIds || !Array.isArray(patternIds) || patternIds.length === 0) {
+    return res.status(400).send({ message: 'PDF ID and a non-empty array of pattern IDs are required.' });
   }
 
   try {
-    let allConditionIds = [];
+    let appliedPatterns = [];
 
     for (const patternId of patternIds) {
-      const patternDoc = await patternsCollection.doc(patternId).get();
+      let patternDoc = await savedPatternsCollection.doc(patternId).get();
       if (!patternDoc.exists) {
-        const savedPatternDoc = await savedPatternsCollection.doc(patternId).get();
-        if (!savedPatternDoc.exists || savedPatternDoc.data().userId !== userId) {
+        patternDoc = await patternsCollection.doc(patternId).get();
+        if (!patternDoc.exists) {
+          console.log(`Pattern ${patternId} not found.`);
           continue;
         }
-        allConditionIds.push(...savedPatternDoc.data().conditionIds);
-      } else {
-        allConditionIds.push(...patternDoc.data().conditionIds);
       }
+
+      const patternData = patternDoc.data();
+      const conditions = await Promise.all(patternData.conditionIds.map(async conditionId => {
+        let conditionDoc = await conditionsCollection.doc(conditionId).get();
+        if (!conditionDoc.exists) {
+          let savedConditionsDocs = await savedConditionsCollection
+            .where('pdfId', '==', pdfId)
+            .get();
+
+          let condition = null;
+          savedConditionsDocs.forEach(doc => {
+            const savedConditions = doc.data().conditions;
+            const foundCondition = savedConditions.find(c => c.id === conditionId);
+            if (foundCondition) condition = { id: conditionId, text: foundCondition.text };
+          });
+
+          return condition;
+        }
+        return { id: conditionId, text: conditionDoc.data().text };
+      })).then(results => results.filter(c => c));
+
+      appliedPatterns.push({
+        patternId: patternDoc.id,
+        conditions
+      });
     }
 
-    allConditionIds = [...new Set(allConditionIds)];
-
-    const conditionsDetails = await Promise.all(allConditionIds.map(async conditionId => {
-      let conditionDoc = await conditionsCollection.doc(conditionId).get();
-      if (conditionDoc.exists) {
-        return { id: conditionId, text: conditionDoc.data().text };
-      } else {
-        const querySnapshot = await savedConditionsCollection
-          .where('conditions.id', 'array-contains', conditionId)
-          .where('userId', '==', userId)
-          .get();
-        if (!querySnapshot.empty) {
-          const savedCondition = querySnapshot.docs
-            .flatMap(doc => doc.data().conditions)
-            .find(c => c.id === conditionId);
-          return savedCondition ? { id: conditionId, text: savedCondition.text } : null;
-        }
-      }
-      return null;
-    }));
-
-    const filteredConditionsDetails = conditionsDetails.filter(condition => condition !== null);
-
-    await appliedConditionsCollection.doc(pdfId).set({
-      userId,
-      conditions: filteredConditionsDetails
-    }, { merge: true });
-
-    res.status(200).send({
-      message: 'Patterns applied successfully.',
-      conditions: filteredConditionsDetails
+    res.json({
+      pdfId,
+      appliedPatterns
     });
   } catch (error) {
     console.error("Error applying patterns to PDF:", error);
-    res.status(500).send({ message: "Failed to apply patterns.", error: error.message });
+    res.status(500).send({ message: "Failed to apply patterns to PDF.", error: error.message });
   }
 });
 
