@@ -210,7 +210,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
-  savePatternChanges(): void {
+  savePatternChanges(patternIndex: number): void {
     this.editingPatternIndex = null;
   }
 
