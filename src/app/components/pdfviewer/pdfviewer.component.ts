@@ -5,6 +5,7 @@ import {Subscription} from 'rxjs';
 import {OpenaiService} from "../../shared/services/ai/openai.service";
 import {ConditionService} from "../../shared/services/condition/condition.service";
 import {PatternService} from "../../shared/services/pattern/pattern.service";
+import { jsPDF } from 'jspdf';
 
 @Component({
   selector: 'app-pdfviewer',
@@ -124,6 +125,20 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
         this.analysisResponse = 'Error analyzing PDF: ' + error.message;
       }
     });
+  }
+
+  downloadAnalysisAsPDF(): void {
+    const doc = new jsPDF();
+    doc.text(this.analysisResponse, 10, 10);
+    doc.save('analysisResponse.pdf');
+  }
+
+  openAnalysisAsPDF(): void {
+    const doc = new jsPDF();
+    doc.text(this.analysisResponse, 10, 10);
+    const pdfBlob = doc.output('blob');
+    const blobURL = URL.createObjectURL(pdfBlob);
+    window.open(blobURL, '_blank');
   }
 
   toggleOverlay(): void {

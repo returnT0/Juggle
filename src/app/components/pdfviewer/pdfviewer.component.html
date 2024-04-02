@@ -158,9 +158,12 @@
             <button class="base-button" [routerLink]="['/dashboard']">
               <span class="text-small-regular">close</span>
             </button>
-            <button class="base-button">
+            <button class="base-button" (click)="downloadAnalysisAsPDF()">
               <span class="text-small-regular">download</span>
             </button>
+            <a (click)="openAnalysisAsPDF()" class="base-button cursor-pointer">
+              <span class="text-small-regular">view as PDF</span>
+            </a>
           </div>
         </div>
         <div class="col-span-1 items-end">
