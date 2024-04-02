@@ -433,27 +433,39 @@ app.get('/api/fetch-applied-conditions', async (req, res) => {
 });
 
 app.post('/api/analyze-pdf-firebase', async (req, res) => {
-  let {pdfFileName} = req.body;
+  let { pdfFileName, conditions } = req.body;
 
   if (!pdfFileName) {
     return res.status(400).send('PDF file name not provided.');
+  }
+
+  if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+    return res.status(400).send('Conditions are required and must be an array.');
   }
 
   pdfFileName = decodeURIComponent(pdfFileName);
 
   try {
     const file = bucket.file(pdfFileName);
-
     const [fileBuffer] = await file.download();
     const text = await pdfParse(fileBuffer);
 
-    const messages = [{role: "user", content: `Summarize this text: ${text.text.substring(0, 48000)}`}];
+    const combinedConditionsText = conditions.map((condition, index) =>
+      `${index + 1}. ${condition.text}`).join("\n");
+
+    const messageContent = `${combinedConditionsText}\n\n${text.text.substring(0, 48000)}`;
+
+    const messages = [{ role: "user", content: messageContent }];
 
     const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-3.5-turbo", messages: messages, temperature: 0.7, max_tokens: 400,
+      model: "gpt-3.5-turbo",
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 400,
     }, {
       headers: {
-        'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       }
     });
 

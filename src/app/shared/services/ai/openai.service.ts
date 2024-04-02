@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "../../../../environments/environment";
 import {Observable} from "rxjs";
+import {Condition} from "../condition/condition.service";
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +12,8 @@ export class OpenaiService {
   constructor(private http: HttpClient) {
   }
 
-  analyzePdfFromFirebase(pdfFileName: string): Observable<OpenAIChatResponse> {
-    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf-firebase', { pdfFileName });
+  analyzePdfFromFirebase(pdfFileName: string, conditions: Condition[]): Observable<OpenAIChatResponse> {
+    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf-firebase', { pdfFileName, conditions });
   }
 }
 

@@ -111,14 +111,15 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   }
 
   analyzePdf(fileName: string): void {
-    this.pdfAnalysisService.analyzePdfFromFirebase(fileName).subscribe({
+    this.pdfAnalysisService.analyzePdfFromFirebase(fileName, this.conditions).subscribe({
       next: (response) => {
         if (response.choices && response.choices.length > 0 && response.choices[0].message) {
           this.analysisResponse = response.choices[0].message.content;
         } else {
           this.analysisResponse = 'Received unexpected response structure from the analysis service.';
         }
-      }, error: (error) => {
+      },
+      error: (error) => {
         console.error('Error analyzing PDF:', error);
         this.analysisResponse = 'Error analyzing PDF: ' + error.message;
       }
@@ -146,7 +147,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       this.saveCondition();
     }
   }
-
 
   addCondition(conditionId: string): void {
     if (conditionId) {
