@@ -13,9 +13,14 @@ const port = 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const { v4: uuidv4 } = require('uuid');
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
+const { Configuration, OpenAI } = require("openai");
 
 
-// TODO: fix the recall of the fetch-all-pdfs after signing out
+const openai = new OpenAI({
+  organization: 'org-1UA45EZbAlW0GNoeVsZZ36k8',
+});
+
+
 const authenticateUser = async (req, res, next) => {
   const authorizationHeader = req.headers.authorization;
 
@@ -453,15 +458,15 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
     const combinedConditionsText = conditions.map((condition, index) =>
       `${index + 1}. ${condition.text}`).join("\n");
 
-    const messageContent = `${combinedConditionsText}\n\n${text.text.substring(0, 48000)}`;
+    const messageContent = `${combinedConditionsText}\n\n${text.text.substring(0, 150000)}`;
 
     const messages = [{ role: "user", content: messageContent }];
 
     const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-0125-preview",
       messages: messages,
       temperature: 0.7,
-      max_tokens: 400,
+      max_tokens: 4000,
     }, {
       headers: {
         'Content-Type': 'application/json',
