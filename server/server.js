@@ -453,28 +453,41 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
   try {
     const file = bucket.file(pdfFileName);
     const [fileBuffer] = await file.download();
-    const text = await pdfParse(fileBuffer);
+    const pdfData = await pdfParse(fileBuffer);
 
-    const combinedConditionsText = conditions.map((condition, index) =>
-      `${index + 1}. ${condition.text}`).join("\n");
+    const pages = pdfData.text.split(/(?=Page \d+)/);
 
-    const messageContent = `${combinedConditionsText}\n\n${text.text.substring(0, 150000)}`;
+    const processPage = async (pageText, pageIndex) => {
+      const instructions = "Please provide responses based solely on the provided text.";
+      const combinedConditionsText = conditions.map((condition, index) =>
+        `${index + 1}. ${condition.text}`).join("\n");
 
-    const messages = [{ role: "user", content: messageContent }];
+      const messageContent = `${instructions}\n\n${combinedConditionsText}\n\nPage ${pageIndex + 1}:\n${pageText}`;
+      const messages = [{ role: "user", content: messageContent }];
 
-    const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-4-0125-preview",
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 4000,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      }
-    });
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: "gpt-4-0125-preview",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 4096,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      });
 
-    res.json(openaiResponse.data);
+      return response.data;
+    };
+
+    const MAX_CONCURRENT_REQUESTS = 5;
+    const results = [];
+    for (let i = 0; i < pages.length; i += MAX_CONCURRENT_REQUESTS) {
+      const requests = pages.slice(i, i + MAX_CONCURRENT_REQUESTS).map((page, index) => processPage(page, i + index));
+      results.push(...(await Promise.all(requests)));
+    }
+
+    res.json(results);
   } catch (error) {
     console.error("Error in Firebase or OpenAI request:", error.response ? error.response.data : error.message);
     res.status(500).json({

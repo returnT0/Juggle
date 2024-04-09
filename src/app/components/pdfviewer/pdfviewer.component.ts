@@ -114,8 +114,10 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   analyzePdf(fileName: string): void {
     this.pdfAnalysisService.analyzePdfFromFirebase(fileName, this.conditions).subscribe({
       next: (response) => {
-        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
-          this.analysisResponse = response.choices[0].message.content;
+        if (Array.isArray(response) && response.length > 0 &&
+          response[0].choices && response[0].choices.length > 0 &&
+          response[0].choices[0].message) {
+          this.analysisResponse = response[0].choices[0].message.content;
         } else {
           this.analysisResponse = 'Received unexpected response structure from the analysis service.';
         }
@@ -127,6 +129,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     });
   }
 
+
   downloadAnalysisAsPDF(): void {
     const doc = new jsPDF();
     doc.text(this.analysisResponse, 10, 10);
@@ -135,11 +138,24 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   openAnalysisAsPDF(): void {
     const doc = new jsPDF();
-    doc.text(this.analysisResponse, 10, 10);
+
+    const lines = doc.splitTextToSize(this.analysisResponse, 180);
+
+    let y = 10;
+    for (let i = 0; i < lines.length; i++) {
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+      doc.text(lines[i], 10, y);
+      y += 10;
+    }
+
     const pdfBlob = doc.output('blob');
     const blobURL = URL.createObjectURL(pdfBlob);
     window.open(blobURL, '_blank');
   }
+
 
   toggleOverlay(): void {
     this.showOverlay = !this.showOverlay;
