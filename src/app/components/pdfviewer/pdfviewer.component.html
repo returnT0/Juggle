@@ -29,26 +29,28 @@
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-4 gap-x-3 gap-y-3 w-full self-start overflow-y-scroll max-h-[59vh]">
+          <div class="grid grid-cols-3 gap-x-3 gap-y-3 w-full self-start overflow-y-scroll max-h-[59vh]">
             <div *ngFor="let pattern of patterns; let pIndex = index"
-                 class="relative w-full bg-light-2 rounded-md p-3 h-auto shadow shadow-primary/10">
-              <input type="checkbox" [id]="'pattern-' + pIndex" class="mr-2"
-                     (change)="togglePatternSelection(pIndex)">
-              <label [for]="'pattern-' + pIndex" class="uppercase text-heading4-medium">{{ pattern.name }}</label>
-
+                 class="relative w-full bg-light-2 rounded-md py-2 px-3 h-auto shadow shadow-primary/10 space-y-1">
+              <div class="w-full pr-10">
+                <label class="uppercase text-heading4-medium">{{ pattern.name }}</label>
+              </div>
               <div *ngIf="editingPatternIndex === pIndex">
                 <input [(ngModel)]="pattern.name" class="text-input-class" type="text">
                 <button (click)="savePatternChanges(pIndex)">Save</button>
                 <button (click)="cancelEditing()">Cancel</button>
               </div>
-              <div *ngFor="let condition of pattern.conditions" class="pattern-condition">
-                {{ condition.text }}
+              <div class="w-full space-y-2">
+                <div *ngFor="let condition of pattern.conditions" class="">
+                  {{ condition.text }}
+                </div>
               </div>
               <div class="absolute right-0 top-0 mt-1 mr-1 bg-none rounded-sm space-x-1 space-y-1 px-1">
                 <button
+                  [attr.id]="'pattern-' + pIndex"
                   class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
-                  (click)="togglePatternConditions(pIndex)">
-                  <img src="assets/{{appliedPatterns.includes(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
+                  (click)="togglePatternSelection(pIndex)">
+                  <img src="assets/{{selectedPatterns.has(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
                        alt="toggle visibility" class="w-4 h-4">
                 </button>
                 <button
@@ -126,9 +128,12 @@
           <input *ngIf="selectedCondition === 'makeYourOwn'" [(ngModel)]="newConditionValue" type="text"
                  class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1"
                  placeholder="Condition...">
-          <select *ngIf="selectedCondition === 'predefined'" [(ngModel)]="selectedPredefinedConditionId" #secondarySelect
+          <select *ngIf="selectedCondition === 'predefined'" [(ngModel)]="selectedPredefinedConditionId"
+                  #secondarySelect
                   class="w-full px-3 py-2 border-0 font-gabarito text-base-regular tracking-wide bg-dark-1 focus:ring-0 focus:outline-none placeholder-gray-100 text-light-1">
-            <option *ngFor="let condition of secondaryOptions[selectedCondition]" [value]="condition.id">{{ condition.text }}</option>
+            <option *ngFor="let condition of secondaryOptions[selectedCondition]"
+                    [value]="condition.id">{{ condition.text }}
+            </option>
           </select>
 
           <select *ngIf="selectedCondition === 'saved'" [(ngModel)]="selectedSavedConditionId" #savedSelect
@@ -177,7 +182,7 @@
       <div class="w-full h-full p-4">
         <div class="flex flex-col gap-y-4">
           <div disabled
-               class="w-fit h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide"
+               class="w-fit h-[52vh] max-h-[72vh] min-h-[50vh] border-0 p-2 font-gabarito text-body-normal tracking-wide overflow-y-auto"
                placeholder="Current pdf file has information about...">
             {{ analysisResponse }}
           </div>
