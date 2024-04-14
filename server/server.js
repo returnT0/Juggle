@@ -132,7 +132,6 @@ app.put('/api/edit-pattern/:id', async (req, res) => {
   }
 });
 
-
 app.post('/api/create-pattern', async (req, res) => {
   const {name, conditionIds, pdfId} = req.body;
 
