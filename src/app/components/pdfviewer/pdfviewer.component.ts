@@ -14,14 +14,16 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc = '';
   currentPdfId = '';
   cleanedFileName = '';
+
   analysisResponse = '';
+
   conditions: Condition[] = [];
-  showOverlay = false;
-  showPattern = false;
   patterns: Pattern[] = [];
+
   appliedPatterns: number[] = [];
   selectedPatterns = new Set<number>();
   editingPatternIndex: number | null = null;
+
   savedConditions: Condition[] = [];
   selectedCondition = 'makeYourOwn';
   selectedPredefinedConditionId: string | null = null;
@@ -29,22 +31,21 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   newConditionValue = '';
   secondaryOptions: SecondaryOptions = {predefined: [], saved: []};
+
   message: string = '';
+  showOverlay = false;
+  showPattern = false;
   showMessage: boolean = false;
   showOptions!: boolean;
   patternName: string = '';
   showInput!: boolean;
   onYesCallback?: () => void;
   onNoCallback?: () => void;
-  private routeSub: Subscription | undefined;
 
-  constructor(
-    private route: ActivatedRoute,
-    private uploadService: UploadService,
-    private pdfAnalysisService: OpenaiService,
-    private conditionService: ConditionService,
-    private patternService: PatternService,
-    private cdr: ChangeDetectorRef) {
+  private routeSub: Subscription | undefined;
+  private analysisSubscription: Subscription | null = null;
+
+  constructor(private route: ActivatedRoute, private uploadService: UploadService, private pdfAnalysisService: OpenaiService, private conditionService: ConditionService, private patternService: PatternService, private cdr: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -88,18 +89,43 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   }
 
   analyzePdf(fileName: string): void {
-    this.pdfAnalysisService.analyzePdfFromFirebase(fileName, this.conditions).subscribe({
+    this.terminateAnalysis();
+
+    this.displayMessage({
+      message: 'Analysis has started. Please wait...', duration: 0
+    });
+
+    this.analysisSubscription = this.pdfAnalysisService.analyzePdfFromFirebase(fileName, this.conditions).subscribe({
       next: (response) => {
         if (Array.isArray(response) && response.length > 0 && response[0].choices && response[0].choices.length > 0 && response[0].choices[0].message) {
           this.analysisResponse = response[0].choices[0].message.content;
+          this.displayMessage({
+            message: 'Analysis completed successfully', duration: 3000
+          });
         } else {
-          this.analysisResponse = 'Received unexpected response structure from the analysis service.';
+          this.analysisResponse = 'Received unexpected response structure from the analysis service';
+          this.displayMessage({
+            message: 'Unexpected response structure received', duration: 3000
+          });
         }
       }, error: (error) => {
         console.error('Error analyzing PDF:', error);
         this.analysisResponse = 'Error analyzing PDF: ' + error.message;
+        this.displayMessage({
+          message: 'Analysis failed: ' + error.message, duration: 3000
+        });
       }
     });
+  }
+
+  terminateAnalysis(): void {
+    if (this.analysisSubscription) {
+      this.analysisSubscription.unsubscribe();
+      this.analysisSubscription = null;
+      this.displayMessage({
+        message: 'Analysis terminated by the user', duration: 3000
+      });
+    }
   }
 
   downloadAnalysisAsPDF(): void {
@@ -337,13 +363,9 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           this.patterns[patternIndex].name = newName;
 
           this.displayMessage({
-            message: 'Successfully! Pattern name updated',
-            duration: 3000,
-            showOptions: false,
-            showInput: false
+            message: 'Successfully! Pattern name updated', duration: 3000, showOptions: false, showInput: false
           });
-        },
-        error: (error) => {
+        }, error: (error) => {
           console.error('Failed to update pattern name:', error.message);
 
           let errorMessage = 'Something went wrong, please try again...';
@@ -356,10 +378,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           }
 
           this.displayMessage({
-            message: errorMessage,
-            duration: 3000,
-            showOptions: false,
-            showInput: false
+            message: errorMessage, duration: 3000, showOptions: false, showInput: false
           });
         }
       });
@@ -373,12 +392,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   }
 
   displayMessage({message, duration, showOptions = false, showInput = false, onYes, onNo}: {
-    message: string,
-    duration: number,
-    showOptions?: boolean,
-    showInput?: boolean,
-    onYes?: () => void,
-    onNo?: () => void
+    message: string, duration: number, showOptions?: boolean, showInput?: boolean, onYes?: () => void, onNo?: () => void
   }) {
     this.message = message;
     this.showMessage = true;

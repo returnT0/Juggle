@@ -8,11 +8,25 @@ import {NgxSpinnerService} from "ngx-spinner";
   providedIn: 'root'
 })
 export class InterceptorService {
-  constructor(private spinner: NgxSpinnerService) {
-  }
+  constructor(private spinner: NgxSpinnerService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    this.spinner.show();
-    return next.handle(req).pipe(finalize(() => this.spinner.hide()));
+    const noSpinner = req.headers.get('no-spinner');
+
+    if (!noSpinner) {
+      this.spinner.show();
+    }
+
+    const authReq = req.clone({
+      headers: req.headers.delete('no-spinner')
+    });
+
+    return next.handle(authReq).pipe(
+      finalize(() => {
+        if (!noSpinner) {
+          this.spinner.hide();
+        }
+      })
+    );
   }
 }

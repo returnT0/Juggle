@@ -13,7 +13,8 @@ export class OpenaiService {
   }
 
   analyzePdfFromFirebase(pdfFileName: string, conditions: Condition[]): Observable<OpenAIChatResponse> {
-    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf-firebase', { pdfFileName, conditions });
+    const headers = new HttpHeaders().set('no-spinner', 'true');
+    return this.http.post<OpenAIChatResponse>('/api/analyze-pdf-firebase', { pdfFileName, conditions }, { headers });
   }
 }
 

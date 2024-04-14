@@ -188,7 +188,7 @@
           <div class="flex flex-row">
             <button
               class="base-button"
-              (click)="toggleOverlay()">
+              (click)="terminateAnalysis()">
               <span class="text-small-regular">stop analyzing</span>
             </button>
           </div>
@@ -210,7 +210,7 @@
 <div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
   <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default"
        role="alert">
-    <div class="ms-3 text-sm font-normal whitespace-nowrap">{{ message }}</div>
+    <div class="ms-3 text-sm font-normal whitespace-nowrap uppercase">{{ message }}</div>
     <input *ngIf="showInput" [(ngModel)]="patternName" type="text"
            class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm focus:outline-none focus:ring-0 focus:border-dark-1 "/>
     <div *ngIf="showOptions" class="flex gap-x-2">
