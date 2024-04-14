@@ -10,10 +10,6 @@ export class PatternService {
 
   constructor(private http: HttpClient) { }
 
-  fetchPattern(patternId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/fetch-pattern/${patternId}`);
-  }
-
   fetchAllPatterns(pdfId?: string): Observable<any[]> {
     let params = new HttpParams();
     if (pdfId) {
@@ -33,8 +29,8 @@ export class PatternService {
     return this.http.post(`${this.apiUrl}/apply-patterns-to-pdf`, body);
   }
 
-  editPattern(id: string, newName: string, newConditions: string[]): Observable<any> {
-    return this.http.put(`${this.apiUrl}/edit-pattern/${id}`, { newName, newConditions });
+  editPattern(id: string, newName: string, pdfId: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/edit-pattern/${id}`, { newName, pdfId });
   }
 
   deletePattern(patternId: string): Observable<any> {

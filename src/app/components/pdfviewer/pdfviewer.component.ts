@@ -5,12 +5,10 @@ import {Subscription} from 'rxjs';
 import {OpenaiService} from "../../shared/services/ai/openai.service";
 import {ConditionService} from "../../shared/services/condition/condition.service";
 import {PatternService} from "../../shared/services/pattern/pattern.service";
-import { jsPDF } from 'jspdf';
+import {jsPDF} from 'jspdf';
 
 @Component({
-  selector: 'app-pdfviewer',
-  templateUrl: './pdfviewer.component.html',
-  styleUrls: ['./pdfviewer.component.css'],
+  selector: 'app-pdfviewer', templateUrl: './pdfviewer.component.html', styleUrls: ['./pdfviewer.component.css'],
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc = '';
@@ -30,8 +28,14 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   selectedSavedConditionId: string | null = null;
 
   newConditionValue = '';
-  secondaryOptions: SecondaryOptions = { predefined: [], saved: [] };
-
+  secondaryOptions: SecondaryOptions = {predefined: [], saved: []};
+  message: string = '';
+  showMessage: boolean = false;
+  showOptions!: boolean;
+  patternName: string = '';
+  showInput!: boolean;
+  onYesCallback?: () => void;
+  onNoCallback?: () => void;
   private routeSub: Subscription | undefined;
 
   constructor(
@@ -40,8 +44,8 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     private pdfAnalysisService: OpenaiService,
     private conditionService: ConditionService,
     private patternService: PatternService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef) {
+  }
 
   ngOnInit(): void {
     this.subscribeToRouteParams();
@@ -51,32 +55,10 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.unsubscribeFromRouteParams();
   }
 
-  private subscribeToRouteParams(): void {
-    this.routeSub = this.route.params.subscribe(params => {
-      const encodedPdfId = params['id'];
-      this.currentPdfId = atob(encodedPdfId);
-      this.initializeComponentData();
-    });
-  }
-
-  private unsubscribeFromRouteParams(): void {
-    this.routeSub?.unsubscribe();
-  }
-
-  private initializeComponentData(): void {
-    this.fetchPdfUrlById(this.currentPdfId)
-      .then(() => {
-        this.loadAppliedConditions();
-        this.loadAllConditions();
-        this.loadAllPatterns();
-      })
-      .catch(error => console.error('Initialization error:', error));
-  }
-
   loadAllConditions(): void {
     this.conditionService.fetchAllConditions(this.currentPdfId).subscribe({
       next: (data) => {
-        this.secondaryOptions.predefined = data.predefined.map((c) => ({ id: c.id, text: c.text }));
+        this.secondaryOptions.predefined = data.predefined.map((c) => ({id: c.id, text: c.text}));
         console.log('Updated secondaryOptions:', this.secondaryOptions);
         this.savedConditions = data.saved;
       }, error: (error) => console.error('Error fetching conditions:', error)
@@ -87,12 +69,9 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.conditionService.fetchAppliedConditions(this.currentPdfId).subscribe({
       next: (conditions) => {
         this.conditions = conditions.map((condition: Condition) => ({
-          id: condition.id,
-          text: condition.text,
-          visible: condition.visible ?? true
+          id: condition.id, text: condition.text, visible: condition.visible ?? true
         }));
-      },
-      error: (error) => console.error('Error fetching applied conditions:', error)
+      }, error: (error) => console.error('Error fetching applied conditions:', error)
     });
   }
 
@@ -100,35 +79,28 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     this.patternService.fetchAllPatterns(this.currentPdfId).subscribe({
       next: (patterns) => {
         this.patterns = patterns.map(pattern => ({
-          ...pattern,
-          conditions: pattern.conditions.map((condition: Condition) => ({
-            text: condition.text,
-            visible: condition.visible ?? true
+          ...pattern, conditions: pattern.conditions.map((condition: Condition) => ({
+            text: condition.text, visible: condition.visible ?? true
           }))
         }));
-      },
-      error: (error) => console.error('Error fetching patterns:', error)
+      }, error: (error) => console.error('Error fetching patterns:', error)
     });
   }
 
   analyzePdf(fileName: string): void {
     this.pdfAnalysisService.analyzePdfFromFirebase(fileName, this.conditions).subscribe({
       next: (response) => {
-        if (Array.isArray(response) && response.length > 0 &&
-          response[0].choices && response[0].choices.length > 0 &&
-          response[0].choices[0].message) {
+        if (Array.isArray(response) && response.length > 0 && response[0].choices && response[0].choices.length > 0 && response[0].choices[0].message) {
           this.analysisResponse = response[0].choices[0].message.content;
         } else {
           this.analysisResponse = 'Received unexpected response structure from the analysis service.';
         }
-      },
-      error: (error) => {
+      }, error: (error) => {
         console.error('Error analyzing PDF:', error);
         this.analysisResponse = 'Error analyzing PDF: ' + error.message;
       }
     });
   }
-
 
   downloadAnalysisAsPDF(): void {
     const doc = new jsPDF();
@@ -155,7 +127,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     const blobURL = URL.createObjectURL(pdfBlob);
     window.open(blobURL, '_blank');
   }
-
 
   toggleOverlay(): void {
     this.showOverlay = !this.showOverlay;
@@ -190,9 +161,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
         if (selectedCondition) {
           this.conditions.push({
-            id: selectedCondition.id,
-            text: selectedCondition.text,
-            visible: true
+            id: selectedCondition.id, text: selectedCondition.text, visible: true
           });
           console.log('Condition added:', selectedCondition);
         } else {
@@ -219,10 +188,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     }
   }
 
-  extractPdfIdFromSrc(pdfSrc: string): string {
-    return pdfSrc.substring(pdfSrc.lastIndexOf('/') + 1, pdfSrc.indexOf('?'));
-  }
-
   saveCondition(): void {
     if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
       this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
@@ -231,36 +196,12 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           this.savedConditions.push(newCondition);
           this.secondaryOptions['saved'] = this.savedConditions;
           this.newConditionValue = '';
-        },
-        error: (error) => {
+        }, error: (error) => {
           console.error('Failed to save condition:', error);
         }
       });
     } else {
       console.warn('Condition is empty or already saved:', this.newConditionValue);
-    }
-  }
-
-  savePatternChanges(patternIndex: number): void {
-    this.editingPatternIndex = null;
-  }
-
-  cancelEditing(): void {
-    this.editingPatternIndex = null;
-  }
-
-  togglePatternConditions(patternIndex: number): void {
-    const patternConditions = this.patterns[patternIndex].conditions;
-    if (this.appliedPatterns.includes(patternIndex)) {
-      this.conditions = this.conditions.filter(c => !patternConditions.some(pc => pc.text === c.text));
-      this.appliedPatterns = this.appliedPatterns.filter(i => i !== patternIndex);
-    } else {
-      patternConditions.forEach(pc => {
-        if (!this.conditions.some(c => c.text === pc.text)) {
-          this.conditions.push({...pc});
-        }
-      });
-      this.appliedPatterns.push(patternIndex);
     }
   }
 
@@ -283,20 +224,15 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           pattern.conditions.forEach((condition: Condition) => {
             if (!this.conditions.some(c => c.id === condition.id)) {
               this.conditions.push({
-                id: condition.id,
-                text: condition.text,
-                visible: true
+                id: condition.id, text: condition.text, visible: true
               });
             }
           });
         });
         this.cdr.detectChanges();
-      },
-      error: (error) => console.error('Error applying patterns to PDF:', error)
+      }, error: (error) => console.error('Error applying patterns to PDF:', error)
     });
   }
-
-
 
   deletePattern(patternId: string, patternIndex: number): void {
     this.patternService.deletePattern(patternId).subscribe({
@@ -304,8 +240,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
         console.log('Pattern deleted successfully:', response);
         // Remove the pattern from the list if deletion was successful
         this.patterns.splice(patternIndex, 1);
-      },
-      error: (error) => console.error('Failed to delete pattern:', error),
+      }, error: (error) => console.error('Failed to delete pattern:', error),
     });
   }
 
@@ -313,10 +248,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     const patternName = `pattern_${this.patterns.length + 1}`;
     const conditionIds = this.conditions.filter(c => c.id).map(c => c.id);
 
-    const isDuplicate = this.patterns.some(pattern =>
-      pattern.conditions.length === conditionIds.length &&
-      pattern.conditions.every(pc => conditionIds.includes(pc.id))
-    );
+    const isDuplicate = this.patterns.some(pattern => pattern.conditions.length === conditionIds.length && pattern.conditions.every(pc => conditionIds.includes(pc.id)));
 
     if (!isDuplicate) {
       this.patternService.createPattern(patternName, conditionIds, this.currentPdfId).subscribe({
@@ -328,8 +260,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           };
           this.patterns.push(createdPattern);
           console.log('Pattern created successfully:', createdPattern);
-        },
-        error: (error) => console.error('Failed to create pattern:', error)
+        }, error: (error) => console.error('Failed to create pattern:', error)
       });
     } else {
       alert('A pattern with the exact same conditions already exists.');
@@ -341,8 +272,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       next: (response) => {
         console.log('Condition removed:', response.message);
         this.loadAppliedConditions();
-      },
-      error: (error) => console.error('Error removing condition:', error)
+      }, error: (error) => console.error('Error removing condition:', error)
     });
   }
 
@@ -357,6 +287,127 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       this.selectedPredefinedConditionId = null;
       this.selectedSavedConditionId = null;
     }
+  }
+
+  startEditPattern(patternIndex: number): void {
+    this.editingPatternIndex = patternIndex;
+    const pattern = this.patterns[patternIndex];
+    this.displayMessage({
+      message: `Edit the name of ${pattern.name}:`,
+      duration: 0,
+      showOptions: true,
+      showInput: true,
+      onYes: () => this.savePatternChanges(patternIndex), // Simplified binding
+      onNo: this.cancelEditing.bind(this)
+    });
+  }
+
+  savePatternChanges(patternIndex: number): void {
+    const newName = this.patternName.trim();
+    if (newName && newName !== this.patterns[patternIndex].name) {
+      const patternId = this.patterns[patternIndex].id;
+      const pdfId = this.currentPdfId;
+
+      this.patternService.editPattern(patternId, newName, pdfId).subscribe({
+        next: (response) => {
+          this.patterns[patternIndex].name = newName;
+
+          this.displayMessage({
+            message: 'Successfully! Pattern name updated',
+            duration: 3000,
+            showOptions: false,
+            showInput: false
+          });
+        },
+        error: (error) => {
+          console.error('Failed to update pattern name:', error.message);
+
+          let errorMessage = 'Something went wrong, please try again...';
+          if (error.error && error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          }
+
+          this.displayMessage({
+            message: errorMessage,
+            duration: 3000,
+            showOptions: false,
+            showInput: false
+          });
+        }
+      });
+    }
+    this.cancelEditing();
+  }
+
+  cancelEditing(): void {
+    this.editingPatternIndex = null;
+    this.patternName = '';
+  }
+
+  displayMessage({message, duration, showOptions = false, showInput = false, onYes, onNo}: {
+    message: string,
+    duration: number,
+    showOptions?: boolean,
+    showInput?: boolean,
+    onYes?: () => void,
+    onNo?: () => void
+  }) {
+    this.message = message;
+    this.showMessage = true;
+    this.showOptions = showOptions;
+    this.showInput = showInput;
+
+    this.onYesCallback = onYes;
+    this.onNoCallback = onNo;
+
+    if (duration > 0) {
+      setTimeout(() => {
+        this.showMessage = false;
+        this.showOptions = false;
+        this.showInput = false;
+      }, duration);
+    }
+  }
+
+  handleYes() {
+    if (this.onYesCallback) this.onYesCallback();
+    this.showMessage = false;
+  }
+
+  handleNo() {
+    if (this.onNoCallback) this.onNoCallback();
+    console.log('User declined to reset password.');
+    this.showMessage = false;
+  }
+
+  cancel(): void {
+    this.showMessage = false;
+  }
+
+  private subscribeToRouteParams(): void {
+    this.routeSub = this.route.params.subscribe(params => {
+      const encodedPdfId = params['id'];
+      this.currentPdfId = atob(encodedPdfId);
+      this.initializeComponentData();
+    });
+  }
+
+  private unsubscribeFromRouteParams(): void {
+    this.routeSub?.unsubscribe();
+  }
+
+  private initializeComponentData(): void {
+    this.fetchPdfUrlById(this.currentPdfId)
+      .then(() => {
+        this.loadAppliedConditions();
+        this.loadAllConditions();
+        this.loadAllPatterns();
+      })
+      .catch(error => console.error('Initialization error:', error));
   }
 
   private fetchPdfUrlById(pdfId: string): Promise<void> {

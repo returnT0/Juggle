@@ -3,8 +3,7 @@
   <div *ngIf="showOverlay" class="conditions-container">
     <div *ngIf="showPattern" class="pattern-container">
       <div class="col-start-2 col-span-6 flex p-3">
-        <div
-          class="flex flex-col gap-y-10 bg-[#6D9886] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
+        <div class="flex flex-col gap-y-10 bg-[#6D9886] py-2 px-3 rounded-2xl shadow-lg w-full min-h-[72vh] max-h-[90vh]">
           <div class="flex flex-col w-full space-y-6">
             <div class="flex flex-row w-full">
               <div class="flex justify-start w-full items-center font-gabarito text-dark-1 text-heading3-normal">
@@ -35,11 +34,6 @@
               <div class="w-full pr-10">
                 <label class="uppercase text-heading4-medium">{{ pattern.name }}</label>
               </div>
-              <div *ngIf="editingPatternIndex === pIndex">
-                <input [(ngModel)]="pattern.name" class="text-input-class" type="text">
-                <button (click)="savePatternChanges(pIndex)">Save</button>
-                <button (click)="cancelEditing()">Cancel</button>
-              </div>
               <div class="w-full space-y-2">
                 <div *ngFor="let condition of pattern.conditions" class="">
                   {{ condition.text }}
@@ -53,9 +47,9 @@
                   <img src="assets/{{selectedPatterns.has(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
                        alt="toggle visibility" class="w-4 h-4">
                 </button>
-                <button
-                  class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1">
-                  <img src="../../../assets/tune.svg" alt="delete" class="w-4 h-4">
+                <button (click)="startEditPattern(pIndex)"
+                        class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1">
+                  <img src="../../../assets/tune.svg" alt="tune" class="w-4 h-4">
                 </button>
                 <button
                   class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
@@ -212,3 +206,31 @@
     </div>
   </div>
 </section>
+
+<div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
+  <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default"
+       role="alert">
+    <div class="ms-3 text-sm font-normal whitespace-nowrap">{{ message }}</div>
+    <input *ngIf="showInput" [(ngModel)]="patternName" type="text"
+           class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm focus:outline-none focus:ring-0 focus:border-dark-1 "/>
+    <div *ngIf="showOptions" class="flex gap-x-2">
+      <button (click)="handleYes()"
+              class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">
+        YES
+      </button>
+      <button (click)="handleNo()"
+              class="px-4 py-2 bg-light-1 border-2 border-dark-1 text-dark-1 round-sm hover:bg-dark-1 hover:text-light-1 transition-colors ease-in-out">
+        NO
+      </button>
+    </div>
+    <button (click)="cancel()"
+            class="ms-auto -mx-1.5 -my-1.5 bg-none text-dark-5 focus:ring-0 p-1.5 hover:text-red-600 inline-flex items-center justify-center h-8 w-8"
+            data-dismiss-target="#toast-default" aria-label="Close">
+      <span class="sr-only">Close</span>
+      <svg class="!w-4 !h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
