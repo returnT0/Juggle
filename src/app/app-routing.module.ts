@@ -8,6 +8,8 @@ import {DashboardComponent} from "./components/dashboard/dashboard.component";
 import {AuthGuard} from "./guards/auth.guard";
 import {ProfileComponent} from "./components/profile/profile.component";
 import {PdfviewerComponent} from "./components/pdfviewer/pdfviewer.component";
+import {AboutComponent} from "./components/about/about.component";
+import {ServiceComponent} from "./components/service/service.component";
 
 const routes: Routes = [
   {path: '', redirectTo: '/landing', pathMatch: 'full'},
@@ -17,6 +19,8 @@ const routes: Routes = [
   {path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
   {path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
   {path: 'view-pdf/:id', component: PdfviewerComponent , canActivate: [AuthGuard]},
+  {path: 'about', component: AboutComponent},
+  {path: 'services', component: ServiceComponent},
   {path: '**', component: NotFoundComponent}
 ];
 
