@@ -10,15 +10,9 @@ const multer = require('multer');
 const {PDFDocument} = require('pdf-lib');
 const app = express();
 const port = 3000;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const {v4: uuidv4} = require('uuid');
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
-const {Configuration, OpenAI} = require("openai");
-
-
-const openai = new OpenAI({
-  organization: 'org-1UA45EZbAlW0GNoeVsZZ36k8',
-});
+const {OpenAI} = require("openai");
 
 const authenticateUser = async (req, res, next) => {
   const authorizationHeader = req.headers.authorization;

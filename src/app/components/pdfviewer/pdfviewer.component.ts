@@ -309,7 +309,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       const pdfId = this.currentPdfId;
 
       this.patternService.editPattern(patternId, newName, pdfId).subscribe({
-        next: (response) => {
+        next: () => {
           this.patterns[patternIndex].name = newName;
 
           this.displayMessage({
