@@ -104,23 +104,47 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   downloadAnalysisAsPDF(): void {
     const doc = new jsPDF();
-    doc.text(this.analysisResponse, 10, 10);
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    const maxTextWidth = pageWidth - margin * 2;
+
+    const lines = doc.splitTextToSize(this.analysisResponse, maxTextWidth);
+
+    let yPosition = 10;
+
+    lines.forEach((line: string) => {
+      if (yPosition > 280) {
+        doc.addPage();
+        yPosition = 10;
+      }
+
+      doc.text(line, margin, yPosition);
+      yPosition += 10;
+    });
+
     doc.save('analysisResponse.pdf');
   }
 
   openAnalysisAsPDF(): void {
     const doc = new jsPDF();
 
-    const lines = doc.splitTextToSize(this.analysisResponse, 180);
+    const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+    const margin = 10;
+    const maxLineWidth = pageWidth - margin * 2;
+    const lineHeight = 10;
+    const bottomMargin = 10;
+
+    const lines = doc.splitTextToSize(this.analysisResponse, maxLineWidth);
 
     let y = 10;
     for (let i = 0; i < lines.length; i++) {
-      if (y > 280) {
+      if (y > (doc.internal.pageSize.height || doc.internal.pageSize.getHeight()) - bottomMargin) {
         doc.addPage();
         y = 10;
       }
-      doc.text(lines[i], 10, y);
-      y += 10;
+      doc.text(lines[i], margin, y);
+      y += lineHeight;
     }
 
     const pdfBlob = doc.output('blob');
