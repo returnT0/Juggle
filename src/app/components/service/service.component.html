@@ -1,1 +1,50 @@
-<p>service works!</p>
+<section class="flex flex-col space-y-64 text-light-1 pt-48">
+  <div class="flex w-full">
+    <div class="flex justify-center items-center text-center font-bold font-gabarito text-[95px] w-full">
+      <span class="text-center tracking-wide">Expand capabilities</span>
+    </div>
+  </div>
+  <div class="flex flex-col justify-center w-full items-center font-cormorant-garamond">
+    <div class="grid grid-cols-4 text-light-1 py-8">
+      <div class="grid row-start-1 col-span-3 col-start-1 border-r-2 border-dark-4">
+        <div class="flex flex-col w-full justify-center pl-5 pr-16">
+          <div class="flex justify-center items-center font-cormorant-garamond font-light text-[40px]">
+          <span class="row-span-1 col-start-1 text-left">
+            Explore the full potential of our PDF analysis tools by signing up for a demo trial with your email today!
+          </span>
+          </div>
+          <div class="flex justify-start self-start py-8 w-full">
+            <input type="email"
+                   id="email"
+                   placeholder="Email"
+                   class="w-[30em] py-4 rounded-tl-2xl rounded-bl-2xl text-sm border-0 text-dark-1 bg-light-1 focus:ring-0 placeholder-gray-500 text-[18px]">
+            <button (click)="toggleSignupMessage()" type="button"
+                    class="w-fit bg-light-1 text-dark-1 font-gabarito transition-colors ease-in-out font-semibold text-[18px]
+                    rounded-tr-2xl rounded-br-2xl px-10 py-4 hover:bg-gray-300 active:bg-gray-400">
+              Subscribe
+            </button>
+          </div>
+          <span *ngIf="allowNewSignups" class="text-base-regular self-start tracking-wide">
+            Unfortunately, we are not accepting new signups at the moment.
+          </span>
+        </div>
+      </div>
+      <div
+        class="grid row-start-1 col-span-1 col-start-4 items-center text-left pl-20 font-gabarito text-heading2-semibold">
+        <a [routerLink]="['/landing']">
+          <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>Main</p>
+        </a>
+        <a [routerLink]="['/sign-up']">
+          <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>How it works</p>
+        </a>
+        <a [routerLink]="['/about']">
+          <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>About Us</p>
+        </a>
+        <div class="text-left font-jetbrains text-heading4-thin text-secondary space-x-2">
+          <span>&#169;</span>
+          <span>Juggle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
