@@ -23,7 +23,7 @@
                 <button
                   class="base-button"
                   (click)="applySelectedPatterns()" [disabled]="selectedPatterns.size === 0">
-                  <span class="text-small-regular">save</span>
+                  <span class="text-small-regular">apply</span>
                 </button>
               </div>
             </div>
@@ -135,13 +135,12 @@
             <option *ngFor="let saved of savedConditions" [value]="saved.id">{{ saved.text }}</option>
           </select>
 
-          <button *ngIf="selectedCondition === 'makeYourOwn'" (click)="saveCondition()"
-                  class="bg-dark-1 text-light-1 items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular">
+          <button *ngIf="selectedCondition === 'makeYourOwn'" (click)="createCondition()"
+                  class="bg-dark-1 text-light-1 rounded-r-full items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular">
             save condition
           </button>
-          <button
-            class="bg-dark-1 text-light-1 rounded-r-full items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular"
-            (click)="addSelectedCondition()">
+          <button *ngIf="selectedCondition === 'predefined' || selectedCondition === 'saved'" (click)="addSelectedCondition()"
+            class="bg-dark-1 text-light-1 rounded-r-full items-center py-2 px-4 cursor-pointer w-fit whitespace-nowrap border-0 text-small-regular">
             new condition
           </button>
         </div>

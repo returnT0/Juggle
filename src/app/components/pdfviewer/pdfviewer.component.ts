@@ -8,7 +8,9 @@ import {PatternService} from "../../shared/services/pattern/pattern.service";
 import {jsPDF} from 'jspdf';
 
 @Component({
-  selector: 'app-pdfviewer', templateUrl: './pdfviewer.component.html', styleUrls: ['./pdfviewer.component.css'],
+  selector: 'app-pdfviewer',
+  templateUrl: './pdfviewer.component.html',
+  styleUrls: ['./pdfviewer.component.css'],
 })
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc = '';
@@ -45,7 +47,13 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   private routeSub: Subscription | undefined;
   private analysisSubscription: Subscription | null = null;
 
-  constructor(private route: ActivatedRoute, private uploadService: UploadService, private pdfAnalysisService: OpenaiService, private conditionService: ConditionService, private patternService: PatternService, private cdr: ChangeDetectorRef) {
+  constructor(
+    private route: ActivatedRoute,
+    private uploadService: UploadService,
+    private pdfAnalysisService: OpenaiService,
+    private conditionService: ConditionService,
+    private patternService: PatternService,
+    private cdr: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -196,7 +204,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
     } else if (this.selectedCondition === 'saved' && this.selectedSavedConditionId) {
       this.addCondition(this.selectedSavedConditionId);
     } else if (this.selectedCondition === 'makeYourOwn') {
-      this.saveCondition();
+      this.createCondition();
     }
   }
 
@@ -213,16 +221,77 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           this.conditions.push({
             id: selectedCondition.id, text: selectedCondition.text, visible: true
           });
+          this.displayMessage({
+            message: `Condition "${selectedCondition.text}" added successfully`, duration: 3000
+          });
           console.log('Condition added:', selectedCondition);
         } else {
+          this.displayMessage({
+            message: 'No condition found with the provided ID', duration: 3000
+          });
           console.warn('No condition found with ID:', conditionId);
         }
       } else {
+        this.displayMessage({
+          message: 'Condition already exists and cannot be added again', duration: 3000
+        });
         console.warn('Condition already exists:', conditionId);
       }
     } else {
-      console.error('Condition ID is required to add a condition.');
+      this.displayMessage({
+        message: 'Condition ID is required to add a condition', duration: 3000
+      });
+      console.error('Condition ID is required to add a condition');
     }
+  }
+
+  createCondition(): void {
+    if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
+      this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
+        next: (response) => {
+          const newCondition: Condition = {id: response.id, text: response.text, visible: true};
+          this.savedConditions.push(newCondition);
+          this.secondaryOptions['saved'] = this.savedConditions;
+          this.newConditionValue = '';
+
+          this.displayMessage({
+            message: `Condition "${response.text}" saved successfully`, duration: 3000
+          });
+        }, error: (error) => {
+          console.error('Failed to save condition:', error);
+          this.displayMessage({
+            message: `Failed to save condition: ${error.message}`, duration: 3000
+          });
+        }
+      });
+    } else if (this.newConditionValue) {
+      this.displayMessage({
+        message: `Condition "${this.newConditionValue}" already exists`, duration: 3000
+      });
+      console.warn('Condition is empty or already saved:', this.newConditionValue);
+    } else {
+      this.displayMessage({
+        message: 'Please enter a condition to save', duration: 3000
+      });
+      console.warn('No condition entered');
+    }
+  }
+
+  deleteCondition(conditionId: string): void {
+    this.conditionService.removeConditionFromPdf(this.currentPdfId, conditionId).subscribe({
+      next: (response) => {
+        console.log('Condition removed:', response.message);
+        this.loadAppliedConditions();
+        this.displayMessage({
+          message: 'Condition successfully removed from the PDF', duration: 3000
+        });
+      }, error: (error) => {
+        console.error('Error removing condition:', error);
+        this.displayMessage({
+          message: `Failed to remove condition: ${error.message}`, duration: 3000
+        });
+      }
+    });
   }
 
   saveConditionsForPdf(): void {
@@ -232,26 +301,22 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
     if (conditionIds.length > 0) {
       this.conditionService.applyConditionsToPdf(this.currentPdfId, conditionIds).subscribe({
-        next: () => console.log('Conditions saved successfully for PDF'),
-        error: (error) => console.error('Error saving conditions for PDF:', error)
-      });
-    }
-  }
-
-  saveCondition(): void {
-    if (this.newConditionValue && !this.savedConditions.find(condition => condition.text === this.newConditionValue)) {
-      this.conditionService.createCondition(this.newConditionValue, this.currentPdfId).subscribe({
-        next: (response) => {
-          const newCondition: Condition = {id: response.id, text: response.text, visible: true};
-          this.savedConditions.push(newCondition);
-          this.secondaryOptions['saved'] = this.savedConditions;
-          this.newConditionValue = '';
+        next: () => {
+          console.log('Conditions saved successfully for PDF');
+          this.displayMessage({
+            message: 'Conditions applied successfully to the PDF', duration: 3000
+          });
         }, error: (error) => {
-          console.error('Failed to save condition:', error);
+          console.error('Error saving conditions for PDF:', error);
+          this.displayMessage({
+            message: `Failed to apply conditions to the PDF: ${error.message}`, duration: 3000
+          });
         }
       });
     } else {
-      console.warn('Condition is empty or already saved:', this.newConditionValue);
+      this.displayMessage({
+        message: 'No conditions selected to apply to the PDF', duration: 3000
+      });
     }
   }
 
@@ -268,7 +333,9 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
     this.patternService.applyPatternsToPdf(this.currentPdfId, patternIds).subscribe({
       next: (response) => {
-        console.log('Patterns applied successfully:', response);
+        this.displayMessage({
+          message: 'Patterns applied successfully to the PDF', duration: 3000
+        });
         this.conditions = [];
         response.appliedPatterns.forEach((pattern: any) => {
           pattern.conditions.forEach((condition: Condition) => {
@@ -280,17 +347,27 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           });
         });
         this.cdr.detectChanges();
-      }, error: (error) => console.error('Error applying patterns to PDF:', error)
+        this.saveConditionsForPdf();
+      }, error: (error) => {
+        this.displayMessage({
+          message: `Failed to apply pattern: ${error.message}`, duration: 3000
+        });
+      }
     });
   }
 
   deletePattern(patternId: string, patternIndex: number): void {
     this.patternService.deletePattern(patternId).subscribe({
-      next: (response) => {
-        console.log('Pattern deleted successfully:', response);
-        // Remove the pattern from the list if deletion was successful
+      next: () => {
         this.patterns.splice(patternIndex, 1);
-      }, error: (error) => console.error('Failed to delete pattern:', error),
+        this.displayMessage({
+          message: 'Pattern deleted successfully', duration: 3000
+        });
+      }, error: (error) => {
+        this.displayMessage({
+          message: `Failed to delete pattern: ${error.message}`, duration: 3000
+        });
+      }
     });
   }
 
@@ -309,21 +386,21 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
             conditions: [...this.conditions.filter(c => conditionIds.includes(c.id))],
           };
           this.patterns.push(createdPattern);
-          console.log('Pattern created successfully:', createdPattern);
-        }, error: (error) => console.error('Failed to create pattern:', error)
+          this.displayMessage({
+            message: `Pattern "${response.name}" was created successfully`, duration: 3000
+          });
+        }, error: (error) => {
+          console.error('Failed to create pattern:', error);
+          this.displayMessage({
+            message: 'Failed to create pattern. Please try again...', duration: 3000
+          });
+        }
       });
     } else {
-      alert('A pattern with the exact same conditions already exists.');
+      this.displayMessage({
+        message: 'A pattern with the exact same conditions already exists', duration: 3000
+      });
     }
-  }
-
-  deleteCondition(conditionId: string): void {
-    this.conditionService.removeConditionFromPdf(this.currentPdfId, conditionId).subscribe({
-      next: (response) => {
-        console.log('Condition removed:', response.message);
-        this.loadAppliedConditions();
-      }, error: (error) => console.error('Error removing condition:', error)
-    });
   }
 
   onPrimarySelectionChange(newSelection: string): void {
@@ -347,7 +424,7 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       duration: 0,
       showOptions: true,
       showInput: true,
-      onYes: () => this.savePatternChanges(patternIndex), // Simplified binding
+      onYes: () => this.savePatternChanges(patternIndex),
       onNo: this.cancelEditing.bind(this)
     });
   }
@@ -418,7 +495,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   handleNo() {
     if (this.onNoCallback) this.onNoCallback();
-    console.log('User declined to reset password.');
     this.showMessage = false;
   }
 
