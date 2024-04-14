@@ -306,7 +306,6 @@ app.post('/api/create-condition', async (req, res) => {
       });
     }
 
-    // Include the unique ID in the response
     res.status(201).send({id: conditionId, text});
   } catch (error) {
     console.error("Error creating new condition:", error);
@@ -466,7 +465,7 @@ app.get('/api/fetch-all-pdfs', authenticateUser, async (req, res) => {
   const userUid = req.user.uid;
 
   try {
-    const [files] = await bucket.getFiles({prefix: `pdfs/${userUid}/`}); // Adjust path as necessary
+    const [files] = await bucket.getFiles({prefix: `pdfs/${userUid}/`});
     const metadataPromises = files.map(file => file.getSignedUrl({action: 'read', expires: '03-09-2100'})
       .then(url => ({
         id: file.name, url, path: file.metadata.selfLink
