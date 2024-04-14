@@ -97,7 +97,7 @@ export class ProfileComponent implements OnInit {
           this.displayMessage({
             message: 'PASSWORD RESET SUCCESSFULLY. PLEASE CHECK YOUR EMAIL', duration: 5000
           });
-        }, (error) => {
+        }, () => {
           this.displayMessage({
             message: 'FAILED TO RESET CURRENT PASSWORD. PLEASE TRY AGAIN', duration: 5000
           });
