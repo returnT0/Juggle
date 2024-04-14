@@ -25,6 +25,8 @@ import {ErrorInterceptor} from "./shared/interceptors/error.interceptor";
 import {InterceptorService} from "./shared/interceptors/interceptor.service";
 import {NgxSpinnerModule} from "ngx-spinner";
 import {AuthInterceptor} from "./shared/interceptors/auth.interceptor";
+import { AboutComponent } from './components/about/about.component';
+import { ServiceComponent } from './components/service/service.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +39,9 @@ import {AuthInterceptor} from "./shared/interceptors/auth.interceptor";
     ProfileComponent,
     DashboardComponent,
     NotFoundComponent,
-    PdfviewerComponent
+    PdfviewerComponent,
+    AboutComponent,
+    ServiceComponent
   ],
   imports: [
     BrowserModule,
