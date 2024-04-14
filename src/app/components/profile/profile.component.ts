@@ -13,10 +13,10 @@ export class ProfileComponent implements OnInit {
   message: string = '';
   showMessage: boolean = false;
   showOptions!: boolean;
+  onYesCallback?: () => void;
+  onNoCallback?: () => void;
 
-  constructor(
-    private authService: AuthService
-  ) {
+  constructor(private authService: AuthService) {
     this.emailUpdateForm = new FormGroup({
       newEmail: new FormControl('', [Validators.required, Validators.email]),
     });
@@ -33,12 +33,10 @@ export class ProfileComponent implements OnInit {
   }
 
   copyEmailToClipboard(email: string): void {
-    navigator.clipboard.writeText(email).
-    then(() => {
-      this.displayMessage({message: 'EMAIL COPIED TO CLIPBOARD.', duration: 3000});
-    }).
-    catch(() => {
-      this.displayMessage({message: 'SOMETHING WENT WRONG.', duration: 3000});
+    navigator.clipboard.writeText(email).then(() => {
+      this.displayMessage({message: 'EMAIL COPIED TO CLIPBOARD', duration: 3000});
+    }).catch(() => {
+      this.displayMessage({message: 'SOMETHING WENT WRONG', duration: 3000});
     });
   }
 
@@ -47,18 +45,24 @@ export class ProfileComponent implements OnInit {
       const newEmail = this.emailUpdateForm.get('newEmail')?.value;
       this.authService.updateEmail(newEmail)
         .then(() => {
-          alert('Email updated successfully. Please verify your new email.');
+          alert('Email updated successfully. Please verify your new email');
         })
         .catch(error => {
           console.error('Error updating email:', error);
-          alert('Failed to update email. ' + error.message);
+          alert('Failed to update email: ' + error.message);
         });
     } else {
-      alert('Please enter a valid email address.');
+      alert('Please enter a valid email address');
     }
   }
 
-  displayMessage({message, duration, showOptions = false, onYes, onNo}: { message: any, duration: any, showOptions?: boolean, onYes?: () => void, onNo?: () => void }) {
+  displayMessage({message, duration, showOptions = false, onYes, onNo}: {
+    message: any,
+    duration: any,
+    showOptions?: boolean,
+    onYes?: () => void,
+    onNo?: () => void
+  }) {
     this.message = message;
     this.showMessage = true;
     this.showOptions = showOptions;
@@ -72,9 +76,6 @@ export class ProfileComponent implements OnInit {
     }, duration);
   }
 
-  onYesCallback?: () => void;
-  onNoCallback?: () => void;
-
   handleYes() {
     if (this.onYesCallback) this.onYesCallback();
     this.showMessage = false;
@@ -82,7 +83,7 @@ export class ProfileComponent implements OnInit {
 
   handleNo() {
     if (this.onNoCallback) this.onNoCallback();
-    console.log('User declined to reset password.');
+    console.log('User declined to reset password');
     this.showMessage = false;
   }
 
@@ -94,17 +95,15 @@ export class ProfileComponent implements OnInit {
       onYes: () => this.authService.recoverPassword(this.user.email)
         .subscribe(() => {
           this.displayMessage({
-            message: 'PASSWORD RESET SUCCESSFULLY. PLEASE CHECK YOUR EMAIL.',
-            duration: 5000
+            message: 'PASSWORD RESET SUCCESSFULLY. PLEASE CHECK YOUR EMAIL', duration: 5000
           });
         }, (error) => {
           this.displayMessage({
-            message: 'FAILED TO RESET CURRENT PASSWORD. PLEASE TRY AGAIN.',
-            duration: 5000
+            message: 'FAILED TO RESET CURRENT PASSWORD. PLEASE TRY AGAIN', duration: 5000
           });
         }),
       onNo: () => {
-        console.log('User chose not to reset password.');
+        console.log('User chose not to reset password');
       }
     });
   }

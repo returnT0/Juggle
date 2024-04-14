@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { UploadService } from "../../shared/services/upload/upload.service";
-import { Subscription } from "rxjs";
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {UploadService} from "../../shared/services/upload/upload.service";
+import {Subscription} from "rxjs";
 import {Router} from "@angular/router";
 
 @Component({
@@ -15,26 +15,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
   fileNameInput: string = '';
   showInput!: boolean;
   pdfUrls: { id: string; url: string; title: string; path: string; }[] = [];
+  onYesCallback?: () => void;
+  onNoCallback?: () => void;
   private sub!: Subscription;
 
-  constructor(private uploadService: UploadService, private router: Router) {}
+  constructor(private uploadService: UploadService, private router: Router) {
+  }
 
   ngOnInit(): void {
     this.refreshPdfList();
   }
 
+  ngOnDestroy(): void {
+    if (this.sub) {
+      this.sub.unsubscribe();
+    }
+  }
+
+  get reversedPdfUrls() {
+    return [...this.pdfUrls].reverse();
+  }
   refreshPdfList(): void {
     setTimeout(() => {
       this.uploadService.fetchAllPDFs().subscribe({
         next: (files) => {
           this.pdfUrls = files.map(file => ({
-            id: file.id,
-            url: file.url,
-            title: this.extractTitleFromUrl(file.url),
-            path: file.path
+            id: file.id, url: file.url, title: this.extractTitleFromUrl(file.url), path: file.path
           }));
-        },
-        error: (error) => {
+        }, error: (error) => {
           console.error(error);
           if (error.status === 401 || error.status === 403) {
             console.error('Unauthorized access. Please log in again.');
@@ -42,32 +50,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       });
     }, 1000);
-  }
-
-
-  private extractTitleFromUrl(url: string): string {
-    url = decodeURIComponent(url);
-
-    const cleanUrl = url.split('?')[0];
-
-    const urlParts = cleanUrl.split('/');
-    let fileName = urlParts[urlParts.length - 1];
-
-    fileName = fileName.replace(/\.\w+$/, '');
-
-    const nameParts = fileName.split('_');
-    if (nameParts.length > 1) {
-      nameParts.shift();
-      fileName = nameParts.join('_');
-    }
-
-    return fileName;
-  }
-
-  ngOnDestroy(): void {
-    if (this.sub) {
-      this.sub.unsubscribe();
-    }
   }
 
   async uploadFiles(event: any) {
@@ -107,31 +89,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const proceedWithUpload = (merge = false) => {
 
         this.displayMessage({
-          message: `Uploading ${merge ? "merged" : ""} PDF...`,
-          duration: 1000,
-          showOptions: false,
-          showInput: false,
+          message: `Uploading ${merge ? "merged" : ""} PDF...`, duration: 1000, showOptions: false, showInput: false,
         });
 
-        const uploadOperation = merge
-          ? this.uploadService.uploadMergedPDF(pdfFiles, fileName)
-          : this.uploadService.uploadFile(pdfFiles[0], fileName);
+        const uploadOperation = merge ? this.uploadService.uploadMergedPDF(pdfFiles, fileName) : this.uploadService.uploadFile(pdfFiles[0], fileName);
 
         uploadOperation.then(() => {
           this.displayMessage({
-            message: `PDF uploaded successfully!`,
-            duration: 3000,
-            showOptions: false,
-            showInput: false,
+            message: `PDF uploaded successfully!`, duration: 3000, showOptions: false, showInput: false,
           });
           this.refreshPdfList();
         }).catch((error) => {
           console.error("Upload failed:", error);
           this.displayMessage({
-            message: "Failed to upload PDF.",
-            duration: 3000,
-            showOptions: false,
-            showInput: false,
+            message: "Failed to upload PDF.", duration: 3000, showOptions: false, showInput: false,
           });
         });
       };
@@ -154,40 +125,37 @@ export class DashboardComponent implements OnInit, OnDestroy {
   async confirmDeletePdf(filePath: string, index: number): Promise<void> {
     try {
       await this.uploadService.deleteFile(filePath);
-      this.pdfUrls.splice(index, 1); // Remove the item from the list
+      this.pdfUrls.splice(index, 1);
       console.log("PDF deleted successfully");
 
       this.displayMessage({
-        message: 'PDF deleted successfully.',
-        duration: 3000,
-        showOptions: false,
+        message: 'PDF deleted successfully.', duration: 3000, showOptions: false,
       });
     } catch (error) {
       console.error("Failed to delete PDF:", error);
 
       this.displayMessage({
-        message: 'Failed to delete PDF. Please try again later.',
-        duration: 5000,
-        showOptions: false,
+        message: 'Failed to delete PDF. Please try again later.', duration: 5000, showOptions: false,
       });
     }
   }
 
   viewPdf(pdfId: string): void {
-    // Encode the pdfId
     const encodedPdfId = btoa(pdfId);
 
-    // Create a URL tree with the encoded pdfId
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(['/view-pdf', encodedPdfId])
-    );
+    const url = this.router.serializeUrl(this.router.createUrlTree(['/view-pdf', encodedPdfId]));
 
-    // Open the URL in a new tab
     window.open(url, '_blank');
   }
 
-
-  displayMessage({message, duration, showOptions = false, showInput = false, onYes, onNo}: { message: any, duration: any, showOptions?: boolean, showInput?: boolean, onYes?: (fileNameInput: string) => void, onNo?: () => void }) {
+  displayMessage({message, duration, showOptions = false, showInput = false, onYes, onNo}: {
+    message: any,
+    duration: any,
+    showOptions?: boolean,
+    showInput?: boolean,
+    onYes?: (fileNameInput: string) => void,
+    onNo?: () => void
+  }) {
     this.message = message;
     this.showMessage = true;
     this.showOptions = showOptions;
@@ -197,12 +165,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.fileNameInput = '';
 
     this.onYesCallback = () => {
-      if(onYes) onYes(this.fileNameInput);
+      if (onYes) onYes(this.fileNameInput);
       this.showMessage = false;
     };
     this.onNoCallback = onNo;
 
-    if(duration > 0) {
+    if (duration > 0) {
       setTimeout(() => {
         this.showMessage = false;
         this.showOptions = false;
@@ -210,9 +178,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }, duration);
     }
   }
-
-  onYesCallback?: () => void;
-  onNoCallback?: () => void;
 
   handleYes() {
     if (this.onYesCallback) this.onYesCallback();
@@ -227,5 +192,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   cancel(): void {
     this.showMessage = false;
+  }
+
+  private extractTitleFromUrl(url: string): string {
+    url = decodeURIComponent(url);
+
+    const cleanUrl = url.split('?')[0];
+
+    const urlParts = cleanUrl.split('/');
+    let fileName = urlParts[urlParts.length - 1];
+
+    fileName = fileName.replace(/\.\w+$/, '');
+
+    const nameParts = fileName.split('_');
+    if (nameParts.length > 1) {
+      nameParts.shift();
+      fileName = nameParts.join('_');
+    }
+
+    return fileName;
   }
 }

@@ -2,8 +2,8 @@
   <div class="grid grid-cols-5 gap-6">
     <div class="col-span-1">
       <input type="file" style="display: none" #fileInput (change)="uploadFiles($event)" multiple>
-      <button (click)="fileInput.click()" class="relative block w-[14em] h-[12em]  p-5 bg-dark-3 border border-dark-4 rounded-lg
-      shadow hover:border-2 hover:border-light-1/70 active:border-secondary">
+      <button (click)="fileInput.click()" class="relative block w-[14em] h-[12em] p-5 bg-dark-3 border border-dark-4 rounded-lg
+      shadow hover:border-2 hover:border-light-1/70 active:border-secondary transition-colors ease-in-out">
         <div class="flex justify-center items-center">
           <img src="../../../assets/add.svg" alt="Arrow Icon" class="w-16 h-16 cursor-pointer">
         </div>
@@ -11,11 +11,11 @@
     </div>
     <div class="col-span-1" *ngFor="let item of pdfUrls; let i = index">
       <div
-        class="flex flex-col justify-between relative w-[14em] h-[12em] p-5 bg-dark-3 border border-dark-4 rounded-lg shadow ">
+        class="flex flex-col justify-between relative w-[14em] h-[12em] p-5 bg-dark-3 border border-dark-4 rounded-lg shadow">
         <a (click)="viewPdf(item.id)">
           <img src="../../../assets/arrow.svg" alt="Arrow Icon"
-               class="absolute right-0 top-0 mr-2 mt-2 w-8 h-8 cursor-pointer hover:border-2 hover:border-light-1/70
-               hover:rounded-lg active:border-secondary">
+               class="absolute right-0 top-0 mr-2 mt-2 w-10 h-10 cursor-pointer border-2 border-dark-3 rounded-lg hover:border-2
+               hover:border-light-1/70 active:border-secondary transition-colors ease-in-out">
         </a>
         <div class="flex flex-col justify-between">
           <h5 class="flex mb-2 text-heading2-normal text-light-1 font-gabarito tracking-wider">
@@ -24,7 +24,7 @@
         </div>
         <div class="flex pt-4 space-x-2">
           <button (click)="deletePdf(item.path, i)" class="bg-light-2/80 text-dark-1 font-gabarito font-semibold rounded-xl
-          px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer">DELETE
+          px-4 py-2 hover:bg-light-2 active:bg-gray-400 cursor-pointer transition-colors ease-in-out">DELETE
           </button>
         </div>
       </div>
