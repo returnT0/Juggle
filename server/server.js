@@ -1,4 +1,5 @@
 require('dotenv').config();
+require("openai");
 const express = require('express');
 const pdfParse = require('pdf-parse');
 const axios = require('axios');
@@ -12,7 +13,6 @@ const app = express();
 const port = 3000;
 const {v4: uuidv4} = require('uuid');
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
-const {OpenAI} = require("openai");
 
 const authenticateUser = async (req, res, next) => {
   const authorizationHeader = req.headers.authorization;
