@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/juggle/browser"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "dist/juggle/browser/index.html"
+    }
+  ],
+  "env": {
+    "GOOGLE_APPLICATION_CREDENTIALS": "juggle-f080c-firebase-adminsdk-x9k6r-578d81b3fb.json"
+  }
+}
