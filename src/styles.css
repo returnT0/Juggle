@@ -142,6 +142,10 @@
     @apply col-span-1 min-w-[51.6vw] max-w-[70vw] min-h-[72vh] max-h-[90vh] bg-light-2 self-stretch rounded-sm z-10;
   }
 
+  .viewer-container .filename {
+    @apply absolute top-0 mx-auto bg-light-1/30 z-20 min-w-[51.6vw] max-w-[70vw] items-start text-start text-heading4-normal font-jetbrains;
+  }
+
   .conditions-container {
     @apply absolute inset-0 bg-opacity-40 grid items-center bg-dark-5 grid-cols-2 z-20;
   }

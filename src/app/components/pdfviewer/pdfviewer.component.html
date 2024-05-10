@@ -1,5 +1,10 @@
 <section class="viewer-container">
-  <pdf-viewer [src]="pdfSrc" class="pdf-viewer"></pdf-viewer>
+  <section class="relative min-w-[51.6vw] max-w-[70vw]">
+    <div class="filename">
+      <span class="py-4 px-5">{{ cleanFileName }}</span>
+    </div>
+    <pdf-viewer [src]="pdfSrc" class="pdf-viewer z-10"></pdf-viewer>
+  </section>
   <div *ngIf="showOverlay" class="conditions-container">
     <div *ngIf="showPattern" class="pattern-container">
       <div class="col-start-2 col-span-6 flex p-3">
@@ -42,17 +47,17 @@
               <div class="absolute right-0 top-0 mt-1 mr-1 bg-none rounded-sm space-x-1 space-y-1 px-1">
                 <button
                   [attr.id]="'pattern-' + pIndex"
-                  class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
+                  class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1/80"
                   (click)="togglePatternSelection(pIndex)">
                   <img src="assets/{{selectedPatterns.has(pIndex) ? 'visibility.svg' : 'visibility_off.svg'}}"
                        alt="toggle visibility" class="w-4 h-4">
                 </button>
                 <button (click)="startEditPattern(pIndex)"
-                        class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1">
+                        class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1/80">
                   <img src="../../../assets/tune.svg" alt="tune" class="w-4 h-4">
                 </button>
                 <button
-                  class="bg-gray-100 rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1"
+                  class="bg-none rounded-sm transition-colors ease-in-out items-center py-1 px-1 cursor-pointer font-gabarito hover:bg-dark-1/80"
                   (click)="deletePattern(pattern.id, pIndex)">
                   <img src="../../../assets/delete.svg" alt="delete" class="w-4 h-4">
                 </button>
@@ -196,7 +201,7 @@
           <div class="flex flex-row justify-end">
             <button
               class="base-button"
-              (click)="analyzePdf(cleanedFileName)">
+              (click)="analyzePdf(fileNameFirebase)">
               <span class="text-small-regular">launch</span>
             </button>
           </div>
@@ -206,7 +211,7 @@
   </div>
 </section>
 
-<div *ngIf="message && showMessage" class="absolute bottom-4 right-4">
+<div *ngIf="message && showMessage" class="absolute bottom-0 right-4 z-50">
   <div class="flex items-center w-full p-5 gap-x-2 text-dark-1 bg-light-1 rounded-sm shadow" id="toast-default"
        role="alert">
     <div class="ms-3 text-sm font-normal whitespace-nowrap uppercase">{{ message }}</div>

@@ -22,13 +22,13 @@
     </div>
     <div
       class="grid row-start-1 col-span-1 col-start-4 items-center text-left pl-20 font-gabarito text-heading2-semibold">
-      <a>
-        <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>Features</p>
+      <a [routerLink]="['/sign-up']">
+        <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>Join</p>
       </a>
-      <a>
-        <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>How it works</p>
+      <a [routerLink]="['/services']">
+        <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>Services</p>
       </a>
-      <a>
+      <a [routerLink]="['/about']">
         <p class='nav_link nav_link_heading text-light-1 hover:text-secondary'>About Us</p>
       </a>
       <div class="text-left font-jetbrains text-heading4-thin text-secondary space-x-2">

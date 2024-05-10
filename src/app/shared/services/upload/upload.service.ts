@@ -1,8 +1,7 @@
 import {Injectable} from '@angular/core';
 import {AngularFireStorage} from "@angular/fire/compat/storage";
 import {catchError, lastValueFrom, Observable, throwError} from "rxjs";
-import {finalize, switchMap} from 'rxjs/operators';
-import {PDFDocument} from 'pdf-lib';
+import {switchMap} from 'rxjs/operators';
 import {AngularFirestore} from "@angular/fire/compat/firestore";
 import {HttpClient} from "@angular/common/http";
 import {AngularFireAuth} from "@angular/fire/compat/auth";
@@ -45,11 +44,11 @@ export class UploadService {
     await this.http.post('/api/merge-upload-pdfs', formData).toPromise();
   }
 
-  fetchAllPDFs(): Observable<{ id: string, url: string, path: string }[]> {
+  fetchAllPDFs(): Observable<PdfData[]> {
     return this.afAuth.idToken.pipe(
       switchMap(token => {
         const headers = { 'Authorization': `Bearer ${token}` };
-        return this.http.get<{ id: string, url: string, path: string }[]>('/api/fetch-all-pdfs', { headers });
+        return this.http.get<PdfData[]>('/api/fetch-all-pdfs', { headers });
       }),
       catchError(error => {
         console.error('Error fetching PDFs:', error);
@@ -78,36 +77,10 @@ export class UploadService {
     }
   }
 
-  fetchConditionsByPdfId(pdfId: string): Observable<any[]> {
-    return this.db.collection('conditions', ref => ref.where('pdfId', '==', pdfId)).valueChanges();
-  }
+}
 
-  saveCondition(pdfId: string, condition: { text: string; visible: boolean }): Promise<void> {
-    return this.db.collection('conditions').add({ ...condition, pdfId })
-      .then(() => {}) // Explicitly resolve to void
-      .catch(error => {
-        console.error("Error saving condition:", error);
-        throw new Error("Failed to save condition.");
-      });
-  }
-
-
-  deleteCondition(conditionId: string): Promise<void> {
-    return this.db.collection('conditions').doc(conditionId).delete();
-  }
-
-  savePattern(pdfId: string, pattern: { name: string; conditions: { text: string; visible: boolean }[] }): Promise<void> {
-    return this.db.collection('patterns').add({ ...pattern, pdfId })
-      .then(() => {}) // Explicitly resolve to void
-      .catch(error => {
-        console.error("Error saving pattern:", error);
-        throw new Error("Failed to save pattern.");
-      });
-  }
-
-  deletePattern(patternId: string): Promise<void> {
-    return this.db.collection('patterns').doc(patternId).delete();
-  }
-
-
+interface PdfData {
+  id: string;
+  url: string;
+  path: string;
 }

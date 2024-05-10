@@ -12,6 +12,7 @@ const {PDFDocument} = require('pdf-lib');
 const app = express();
 const port = 3000;
 const {v4: uuidv4} = require('uuid');
+const {Readable} = require("stream");
 const angularAppPath = path.join(__dirname, '../dist/juggle/browser');
 
 const authenticateUser = async (req, res, next) => {
@@ -97,38 +98,100 @@ app.get('/api/fetch-all-patterns', async (req, res) => {
   }
 });
 
-app.put('/api/edit-pattern/:id', async (req, res) => {
-  const {id} = req.params;
-  const {newName, pdfId} = req.body;
+app.get('/api/fetch-all-conditions', async (req, res) => {
+  const {pdfId} = req.query;
 
-  if (!newName.trim()) {
-    return res.status(400).send({message: 'New pattern name is required and cannot be empty.'});
+  try {
+    const conditionsSnapshot = await conditionsCollection.get();
+    const predefinedConditions = [];
+    conditionsSnapshot.forEach(doc => {
+      predefinedConditions.push({
+        id: doc.id, ...doc.data()
+      });
+    });
+
+    const savedConditions = [];
+
+    if (pdfId) {
+      const savedConditionsSnapshot = await firestore.collection('savedConditions')
+        .where('pdfId', '==', pdfId)
+        .get();
+
+      savedConditionsSnapshot.forEach(doc => {
+        const docData = doc.data();
+        if (docData.conditions) {
+          docData.conditions.forEach(condition => {
+            savedConditions.push(condition);
+          });
+        }
+      });
+    }
+
+    res.json({
+      predefined: predefinedConditions, saved: savedConditions
+    });
+  } catch (error) {
+    console.error("Error fetching conditions:", error);
+    res.status(500).send({message: "Failed to fetch conditions.", error: error.message});
+  }
+});
+
+app.get('/api/fetch-all-pdfs', authenticateUser, async (req, res) => {
+  const userUid = req.user.uid;
+
+  try {
+    const [files] = await bucket.getFiles({prefix: `pdfs/${userUid}/`});
+    const metadataPromises = files.map(file => file.getSignedUrl({action: 'read', expires: '03-09-2100'})
+      .then(url => ({
+        id: file.name, url, path: file.metadata.selfLink
+      })));
+
+    const filesMetadata = await Promise.all(metadataPromises);
+    res.json(filesMetadata);
+  } catch (error) {
+    console.error("Error fetching PDF metadata:", error);
+    res.status(500).json({
+      message: "Failed to fetch PDF metadata from Firebase Storage.", error: error.message,
+    });
+  }
+});
+
+app.get('/api/fetch-applied-conditions', async (req, res) => {
+  const {pdfId} = req.query;
+
+  if (!pdfId) {
+    return res.status(400).send({message: 'PDF ID is required.'});
   }
 
   try {
-    const patternDocRef = savedPatternsCollection.doc(id);
-    const patternDoc = await patternDocRef.get();
+    const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).get();
+    let conditionDetails = [];
 
-    if (!patternDoc.exists) {
-      const globalPatternDoc = await patternsCollection.doc(id).get();
-      if (globalPatternDoc.exists) {
-        return res.status(403).send({message: 'Global patterns cannot be edited.'});
-      } else {
-        return res.status(404).send({message: 'Pattern not found.'});
-      }
+    if (!snapshot.empty) {
+      const data = snapshot.docs[0].data();
+      const appliedConditionIds = data.conditionIds;
+
+      conditionDetails = await Promise.all(appliedConditionIds.map(async id => {
+        let doc = await conditionsCollection.doc(id).get();
+        if (doc.exists) {
+          return {id: doc.id, ...doc.data()};
+        } else {
+          const savedSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).get();
+          if (!savedSnapshot.empty) {
+            const savedData = savedSnapshot.docs[0].data().conditions.find(c => c.id === id);
+            return savedData ? {id, ...savedData} : null;
+          }
+        }
+        return null;
+      }));
+
+      conditionDetails = conditionDetails.filter(detail => detail !== null);
     }
 
-    const patternData = patternDoc.data();
-
-    if (pdfId && patternData.pdfId !== pdfId) {
-      return res.status(403).send({message: 'Access denied. Pattern does not belong to the specified PDF.'});
-    }
-
-    await patternDocRef.update({name: newName});
-    res.send({message: 'Pattern name updated successfully.'});
+    res.json(conditionDetails);
   } catch (error) {
-    console.error("Error updating pattern name:", error);
-    res.status(500).send({message: "Failed to update pattern name.", error: error.message});
+    console.error("Error fetching applied conditions:", error);
+    res.status(500).send({message: "Failed to fetch applied conditions.", error: error.message});
   }
 });
 
@@ -228,61 +291,6 @@ app.post('/api/apply-patterns-to-pdf', async (req, res) => {
   }
 });
 
-app.delete('/api/delete-pattern/:patternId', async (req, res) => {
-  const {patternId} = req.params;
-
-  if (!patternId) {
-    return res.status(400).send({message: 'Pattern ID is required.'});
-  }
-
-  try {
-    const patternDoc = savedPatternsCollection.doc(patternId);
-    await patternDoc.delete();
-    res.send({message: 'Pattern successfully deleted.'});
-  } catch (error) {
-    console.error("Error deleting pattern:", error);
-    res.status(500).send({message: "Failed to delete the pattern.", error: error.message});
-  }
-});
-
-app.get('/api/fetch-all-conditions', async (req, res) => {
-  const {pdfId} = req.query;
-
-  try {
-    const conditionsSnapshot = await conditionsCollection.get();
-    const predefinedConditions = [];
-    conditionsSnapshot.forEach(doc => {
-      predefinedConditions.push({
-        id: doc.id, ...doc.data()
-      });
-    });
-
-    const savedConditions = [];
-
-    if (pdfId) {
-      const savedConditionsSnapshot = await firestore.collection('savedConditions')
-        .where('pdfId', '==', pdfId)
-        .get();
-
-      savedConditionsSnapshot.forEach(doc => {
-        const docData = doc.data();
-        if (docData.conditions) {
-          docData.conditions.forEach(condition => {
-            savedConditions.push(condition);
-          });
-        }
-      });
-    }
-
-    res.json({
-      predefined: predefinedConditions, saved: savedConditions
-    });
-  } catch (error) {
-    console.error("Error fetching conditions:", error);
-    res.status(500).send({message: "Failed to fetch conditions.", error: error.message});
-  }
-});
-
 app.post('/api/create-condition', async (req, res) => {
   const {text, pdfId} = req.body;
 
@@ -367,45 +375,6 @@ app.post('/api/remove-condition-from-pdf', async (req, res) => {
   }
 });
 
-app.get('/api/fetch-applied-conditions', async (req, res) => {
-  const {pdfId} = req.query;
-
-  if (!pdfId) {
-    return res.status(400).send({message: 'PDF ID is required.'});
-  }
-
-  try {
-    const snapshot = await appliedConditionsCollection.where('pdfId', '==', pdfId).get();
-    let conditionDetails = [];
-
-    if (!snapshot.empty) {
-      const data = snapshot.docs[0].data();
-      const appliedConditionIds = data.conditionIds;
-
-      conditionDetails = await Promise.all(appliedConditionIds.map(async id => {
-        let doc = await conditionsCollection.doc(id).get();
-        if (doc.exists) {
-          return {id: doc.id, ...doc.data()};
-        } else {
-          const savedSnapshot = await savedConditionsCollection.where('pdfId', '==', pdfId).get();
-          if (!savedSnapshot.empty) {
-            const savedData = savedSnapshot.docs[0].data().conditions.find(c => c.id === id);
-            return savedData ? {id, ...savedData} : null;
-          }
-        }
-        return null;
-      }));
-
-      conditionDetails = conditionDetails.filter(detail => detail !== null);
-    }
-
-    res.json(conditionDetails);
-  } catch (error) {
-    console.error("Error fetching applied conditions:", error);
-    res.status(500).send({message: "Failed to fetch applied conditions.", error: error.message});
-  }
-});
-
 app.post('/api/analyze-pdf-firebase', async (req, res) => {
   let {pdfFileName, conditions} = req.body;
 
@@ -434,10 +403,14 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
       const messages = [{role: "user", content: messageContent}];
 
       const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: "gpt-3.5-turbo-0125", messages: messages, temperature: 0.7, max_tokens: 500,
+        model: "gpt-4-0125-preview",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 4096,
       }, {
         headers: {
-          'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
         }
       });
 
@@ -457,52 +430,6 @@ app.post('/api/analyze-pdf-firebase', async (req, res) => {
     res.status(500).json({
       message: "Failed to retrieve or analyze PDF from Firebase Storage.",
       error: error.response ? error.response.data : error.message,
-    });
-  }
-});
-
-app.get('/api/fetch-all-pdfs', authenticateUser, async (req, res) => {
-  const userUid = req.user.uid;
-
-  try {
-    const [files] = await bucket.getFiles({prefix: `pdfs/${userUid}/`});
-    const metadataPromises = files.map(file => file.getSignedUrl({action: 'read', expires: '03-09-2100'})
-      .then(url => ({
-        id: file.name, url, path: file.metadata.selfLink
-      })));
-
-    const filesMetadata = await Promise.all(metadataPromises);
-    res.json(filesMetadata);
-  } catch (error) {
-    console.error("Error fetching PDF metadata:", error);
-    res.status(500).json({
-      message: "Failed to fetch PDF metadata from Firebase Storage.", error: error.message,
-    });
-  }
-});
-
-app.delete('/api/delete-pdf', async (req, res) => {
-  let {filePath} = req.body;
-
-  if (filePath && filePath.includes('https://')) {
-    const matches = filePath.match(/o\/(.+?)$/);
-    if (matches && matches[1]) {
-      filePath = decodeURIComponent(matches[1]);
-    }
-  }
-
-  if (!filePath) {
-    return res.status(400).send('Valid file path not provided.');
-  }
-
-  try {
-    const file = bucket.file(filePath);
-    await file.delete();
-    res.send({message: "File successfully deleted"});
-  } catch (error) {
-    console.error("Error while deleting file:", error);
-    res.status(500).json({
-      message: "Failed to delete PDF from Firebase Storage.", error: error.message,
     });
   }
 });
@@ -582,6 +509,84 @@ app.post('/api/merge-upload-pdfs', multer().array('files'), async (req, res) => 
   } catch (error) {
     console.error("Error merging PDFs:", error);
     res.status(500).send('Failed to merge PDF files.');
+  }
+});
+
+app.put('/api/edit-pattern/:id', async (req, res) => {
+  const {id} = req.params;
+  const {newName, pdfId} = req.body;
+
+  if (!newName.trim()) {
+    return res.status(400).send({message: 'New pattern name is required and cannot be empty.'});
+  }
+
+  try {
+    const patternDocRef = savedPatternsCollection.doc(id);
+    const patternDoc = await patternDocRef.get();
+
+    if (!patternDoc.exists) {
+      const globalPatternDoc = await patternsCollection.doc(id).get();
+      if (globalPatternDoc.exists) {
+        return res.status(403).send({message: 'Global patterns cannot be edited.'});
+      } else {
+        return res.status(404).send({message: 'Pattern not found.'});
+      }
+    }
+
+    const patternData = patternDoc.data();
+
+    if (pdfId && patternData.pdfId !== pdfId) {
+      return res.status(403).send({message: 'Access denied. Pattern does not belong to the specified PDF.'});
+    }
+
+    await patternDocRef.update({name: newName});
+    res.send({message: 'Pattern name updated successfully.'});
+  } catch (error) {
+    console.error("Error updating pattern name:", error);
+    res.status(500).send({message: "Failed to update pattern name.", error: error.message});
+  }
+});
+
+app.delete('/api/delete-pdf', async (req, res) => {
+  let {filePath} = req.body;
+
+  if (filePath && filePath.includes('https://')) {
+    const matches = filePath.match(/o\/(.+?)$/);
+    if (matches && matches[1]) {
+      filePath = decodeURIComponent(matches[1]);
+    }
+  }
+
+  if (!filePath) {
+    return res.status(400).send('Valid file path not provided.');
+  }
+
+  try {
+    const file = bucket.file(filePath);
+    await file.delete();
+    res.send({message: "File successfully deleted"});
+  } catch (error) {
+    console.error("Error while deleting file:", error);
+    res.status(500).json({
+      message: "Failed to delete PDF from Firebase Storage.", error: error.message,
+    });
+  }
+});
+
+app.delete('/api/delete-pattern/:patternId', async (req, res) => {
+  const {patternId} = req.params;
+
+  if (!patternId) {
+    return res.status(400).send({message: 'Pattern ID is required.'});
+  }
+
+  try {
+    const patternDoc = savedPatternsCollection.doc(patternId);
+    await patternDoc.delete();
+    res.send({message: 'Pattern successfully deleted.'});
+  } catch (error) {
+    console.error("Error deleting pattern:", error);
+    res.status(500).send({message: "Failed to delete the pattern.", error: error.message});
   }
 });
 

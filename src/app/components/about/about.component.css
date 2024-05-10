@@ -1,0 +1,30 @@
+@keyframes swipeUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes swipeRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.swipe-up {
+  animation: swipeUp 0.7s forwards;
+}
+
+.swipe-right {
+  animation: swipeRight 0.7s forwards;
+}
+

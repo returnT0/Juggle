@@ -14,7 +14,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showOptions!: boolean;
   fileNameInput: string = '';
   showInput!: boolean;
-  pdfUrls: { id: string; url: string; title: string; path: string; }[] = [];
+  pdfUrls: PDFFile[] = [];
   onYesCallback?: () => void;
   onNoCallback?: () => void;
   private sub!: Subscription;
@@ -212,4 +212,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     return fileName;
   }
+}
+
+interface PDFFile {
+  id: string;
+  url: string;
+  title: string;
+  path: string;
 }

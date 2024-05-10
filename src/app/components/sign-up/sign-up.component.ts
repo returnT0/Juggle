@@ -29,7 +29,7 @@ export class SignUpComponent implements OnInit {
 
   async signUp() {
     if (!this.form.valid) {
-      this.displayMessage({message: 'PLEASE CHECK YOUR INPUT AND TRY AGAIN.', duration: 5000});
+      this.displayMessage({message: 'PLEASE CHECK YOUR INPUT AND TRY AGAIN.', duration: 10000});
       return;
     }
     try {
@@ -37,14 +37,15 @@ export class SignUpComponent implements OnInit {
         email: this.form.value.email,
         password: this.form.value.password
       });
-      this.displayMessage({message: 'CHECK YOUR EMAIL TO VERIFY YOUR ACCOUNT.', duration: 5000});
+      this.displayMessage({message: 'CHECK YOUR EMAIL TO VERIFY YOUR ACCOUNT.', duration: 10000});
       setTimeout(() => {
         this.router.navigate(['/sign-in']);
-      }, 1500);
+      }, 10000);
     }
-    catch (error : any) {
-      console.error(error);
-      if (error.code === 'auth/email-already-in-use') {
+    catch (error: any) {
+      console.error('Full error object:', error);
+
+      if (error.message && error.message.toLowerCase().includes('email address is already in use')) {
         this.displayMessage({message: 'THE EMAIL ADDRESS IS ALREADY IN USE BY ANOTHER ACCOUNT.', duration: 5000});
       } else {
         this.displayMessage({message: 'SOMETHING WENT WRONG, TRY AGAIN LATER.', duration: 5000});

@@ -1,1 +1,26 @@
-<p>about works!</p>
+<section class="w-full h-full flex flex-col items-center text-light-1 font-gabarito">
+  <div class="flex flex-col items-center justify-center">
+    <div *ngIf="!showAboutText" (click)="handleTextClick()"
+         class="flex justify-center items-center text-center">
+      <p class="about-text text-heading1-normal cursor-pointer pt-48">Elevate your PDF experience, Juggle is here to transform the way you work.
+      </p>
+    </div>
+  </div>
+  <div *ngIf="showAboutText" class="self-center text-heading2-normal w-[30em] tracking-wide leading-relaxed pt-32 text-center items-center">
+      <span class="underline font-semibold">Juggle</span> is your ultimate tool for PDF mastery,
+    transforming how you engage with, analyze, and respond to your documents.
+    Perfect for professionals and individuals alike, <span class="underline font-semibold">Juggle</span>
+    offers an intuitive web app designed
+    to streamline your workflow and enhance your digital interactions.
+    Whether you're refining business strategies or managing personal files,
+    <span class="underline font-semibold">Juggle</span>
+    provides the insights and tools you need to excel in a connected world.
+  </div>
+  <div *ngIf="showAboutText" class="flex w-full pt-52 justify-center items-center">
+    <a [routerLink]="['/sign-up']"
+            class="bg-light-1 text-dark-1 font-gabarito transition-colors ease-in-out font-semibold text-[22px]
+            rounded-full px-10 py-4 hover:bg-gray-300 active:bg-gray-400 cursor-pointer">
+      Get started
+    </a>
+  </div>
+</section>

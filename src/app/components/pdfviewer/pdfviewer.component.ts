@@ -15,7 +15,8 @@ import {jsPDF} from 'jspdf';
 export class PdfviewerComponent implements OnInit, OnDestroy {
   pdfSrc = '';
   currentPdfId = '';
-  cleanedFileName = '';
+  fileNameFirebase = '';
+  cleanFileName = '';
 
   analysisResponse = '';
 
@@ -529,7 +530,8 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
       this.uploadService.getPDFUrlById(pdfId)
         .then((url) => {
           this.pdfSrc = url;
-          this.cleanedFileName = this.extractFileNameFromUrl(url);
+          this.fileNameFirebase = this.extractFileNameFromUrl(url);
+          this.cleanFileName = this.extractFileNameToDisplay(url);
           this.cdr.detectChanges();
           resolve();
         })
@@ -538,6 +540,25 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
           reject(error);
         });
     });
+  }
+
+  private extractFileNameToDisplay(url: string): string {
+    const decodedUrl = decodeURIComponent(url);
+
+    const fileName = decodedUrl.substring(decodedUrl.lastIndexOf('/') + 1);
+    const queryParamIndex = fileName.indexOf('?');
+    const cleanFileName = queryParamIndex !== -1 ? fileName.substring(0, queryParamIndex) : fileName;
+
+    const lastUnderscoreIndex = cleanFileName.lastIndexOf('_');
+    const lastDotIndex = cleanFileName.lastIndexOf('.');
+
+    if (lastDotIndex > lastUnderscoreIndex) {
+      return cleanFileName.substring(lastUnderscoreIndex + 1, lastDotIndex);
+    } else if (lastUnderscoreIndex > -1) {
+      return cleanFileName.substring(lastUnderscoreIndex + 1);
+    }
+
+    return lastDotIndex > 0 ? cleanFileName.substring(0, lastDotIndex) : cleanFileName;
   }
 
   private extractFileNameFromUrl(url: string): string {
