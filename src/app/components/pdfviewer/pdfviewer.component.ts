@@ -58,7 +58,11 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subscribeToRouteParams();
+    this.routeSub = this.route.params.subscribe(params => {
+      const encodedPdfId = params['id'];
+      this.currentPdfId = decodeURIComponent(encodedPdfId);
+      this.initializeComponentData();
+    });
   }
 
   ngOnDestroy(): void {
@@ -501,14 +505,6 @@ export class PdfviewerComponent implements OnInit, OnDestroy {
 
   cancel(): void {
     this.showMessage = false;
-  }
-
-  private subscribeToRouteParams(): void {
-    this.routeSub = this.route.params.subscribe(params => {
-      const encodedPdfId = params['id'];
-      this.currentPdfId = atob(encodedPdfId);
-      this.initializeComponentData();
-    });
   }
 
   private unsubscribeFromRouteParams(): void {
